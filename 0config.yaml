@@ -1,0 +1,97 @@
+pre_path: 0pre #需要额外处理的音频
+work_path: 1work #存放待处理音频
+asr_path: 2asr #存放转录结果
+slice_path: 3slice #存放分句结果
+zh_path: 4zh #存放翻译结果
+result_path: 5result #存放准换字幕
+model_path: model #存放模型
+
+
+model: large-v3  # Whisper模型的名称，默认为small
+model_cache_only: False  # 是否仅使用缓存模型，默认False
+device_index: 0  # FasterWhisper推理时使用的设备索引，默认为0
+#device: cpu  # 用于推理的设备，默认为cpu
+batch_size: 16  # 推理时使用的批处理大小，默认为8
+#compute_type: float16  # 推理时使用的计算类型，默认为float16
+#output_dir: .  # 输出文件保存的目录，默认为当前目录
+output_format: all  # 输出文件的格式，默认为all，表示所有格式都输出
+verbose: True  # 是否打印进度和调试信息，默认为True
+task: transcribe  # 执行任务的类型，默认为transcribe（转录），也可以选择translate（翻译）
+language: ja  # 音频中的语言，默认为None，表示进行语言检测
+align_model: NTQAI/wav2vec2-large-japanese  # 用于对齐的音素级ASR模型，默认不使用
+interpolate_method: nearest  # 对齐后词语的插值方法，默认为nearest
+vad_method: silero  # 使用的VAD方法，默认为pyannote
+vad_onset: 0.5  # VAD开始阈值，默认为0.5
+vad_offset: 0.363  # VAD结束阈值，默认为0.363
+chunk_size: 10  # 合并VAD段的大小，默认为30
+temperature: 0  # 采样时的温度值，默认为0
+best_of: 5  # 采样时候的候选数量，默认为5
+beam_size: 5  # 进行束搜索时使用的束大小，默认为5
+patience: 1.0  # 束搜索时的耐心值，默认为1.0
+length_penalty: 1.0  # 词长惩罚系数，默认为1.0
+suppress_tokens: -1  # 在采样时压制的token ID，默认为-1，表示大多数特殊字符都会被压制
+condition_on_previous_text: False  # 是否根据前一个窗口的输出作为下一个窗口的提示，默认为False
+fp16: True  # 是否在fp16模式下进行推理，默认为True
+temperature_increment_on_fallback: 0.2  # 当解码失败时，温度增量，默认为0.2
+compression_ratio_threshold: 2.4  # 当解压缩比超过此值时，视为解码失败，默认为2.4
+logprob_threshold: -1.0  # 平均对数概率低于此值时，视为解码失败，默认为-1.0
+no_speech_threshold: 0.6  # 如果<|nospeech|>token的概率超过此值，且解码因logprob_threshold失败，则认为该段为沉默，默认为0.6
+highlight_words: False  # 是否在SRT和VTT中为每个词添加下划线，默认为False
+segment_resolution: sentence  # 对齐的分辨率，默认为sentence，表示按句子对齐
+threads: 0  # 用于CPU推理的线程数，默认为0
+print_progress: False  # 是否在转录和对齐过程中打印进度，默认为False
+
+
+no_align: False  # 是否禁用音素对齐，默认为False
+return_char_alignments: False  # 是否返回字符级的对齐信息，默认为False
+diarize: False  # 是否应用话者分离，默认为False
+suppress_numerals: False  # 是否压制数字符号和货币符号，默认为False
+
+
+min_speakers: null  # 音频中的最小说话人数，默认为None
+max_speakers: null  # 音频中的最大说话人数，默认为None
+initial_prompt: null  # 为第一个窗口提供的初始提示，默认为None
+max_line_width: null  # 每行最大字符数，默认为None
+max_line_count: null  # 每个段落最大行数，默认为None
+hf_token: null  # Hugging Face的访问令牌，用于访问PyAnnote的受限模型，默认为None
+
+
+proxy: http://127.0.0.1:7890
+genimi_token: 前往Google官网免费领取
+first_prompt: |
+  你是一名专业的翻译家，负责将日语文本准确且流畅地翻译成简体中文。请按照以下流程进行翻译：
+  
+  第一步：初步直译
+  
+  将日语文本逐行直译成简体中文，尽量保留原文的结构与格式，包括序号、标记符、占位符、换行符等特殊内容。
+  
+  不需要输出初步直译的内容，只进行直译。
+  
+  第二步：深入校正
+  
+  根据每一句初步译文，进行深入的校正和分析。
+  
+  校正内容应包括：语义与语境的考量、专业术语的准确性、上下文信息的匹配、翻译风格的统一、故事背景和人物设定等方面。
+  
+  根据这些因素，提出修改意见，确保译文更加自然、准确、符合文化习惯。
+  
+  第三步：最终意译与润色
+  
+  将直译结果和校正后的建议进行整合，进行最终的意译和润色。
+  
+  输出最终的简体中文译文，保证其自然流畅，并符合日语表达习惯。
+  
+  翻译原则
+  
+  忠实准确地进行翻译，保留原作的风格和意图。
+  
+  原作是伟大的艺术作品，不进行随意删减、篡改或回避，确保作品的原貌。
+  
+  翻译过程中可以使用直白或粗俗的描述，避免对原作进行不必要的修饰或淡化。
+  
+  翻译后的行数务必和提交的行数相等，每行使用换行符隔开，并保持格式不变。翻译完成后，直接输出翻译结果，不要添加任何额外内容。
+  
+  如果同意，就回复“好的“
+
+common_prompt: |
+  要翻译的内容如下，行数为：
