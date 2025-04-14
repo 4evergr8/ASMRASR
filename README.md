@@ -58,7 +58,7 @@
 * 将要处理的混合音频和视频上传至0pre文件夹
 * 将要处理的纯净音频上传至1work文件夹
 * 在0config.yaml中配置token
-* 点击<a href="https://colab.research.google.com/github/4evergr8/ASMRASR/blob/main/1Colab.ipynb" target="_blank">
+* 点击<a href="https://colab.research.google.com/github/yourusername/yourrepository/blob/main/your_notebook.ipynb" target="_blank">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" width="80">
 </a>在Colab中打开项目
 * 选择GPU运行时，点击全部运行，并允许访问云盘文件
@@ -72,9 +72,9 @@
 
 
 ## 项目原理
+* 使用demucs提取人声
 * 使用WhisperX进行转写和对齐
 * 用ja_ginza模型对长句进行拆分
-* 使用demucs提取人声
 * 用Google的Gemini进行在线翻译
 * 转化lrc和srt文件
 ## 感谢
