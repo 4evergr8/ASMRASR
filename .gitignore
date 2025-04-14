@@ -1,0 +1,14 @@
+/.idea
+/__pycache__
+/model/xet
+/model/hub
+*.wav
+*.srt
+*.json
+*.mp3
+*.lrc
+*.txt
+*.tsv
+*.vtt
+
+
