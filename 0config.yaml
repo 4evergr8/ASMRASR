@@ -1,9 +1,12 @@
-pre_path: 0pre #需要额外处理的音频
-work_path: 1work #存放待处理音频
-asr_path: 1work #存放转录结果
-log_path: log #存放记录
-model_path: model #存放模型
+#目录部分
+pre_path: a_pre #存放待提取视频
+cut_path: b_cut #存放待切分音频
+work_path: c_split #存放待分离音频
 
+asr_path: d_asr #存放转写结果
+merge_path: e_merge #存放翻译结果
+model_path: z_model #存放模型
+log_path: z_log #存放记录
 
 prompt:   #被识别音频的标题，作为额外信息输入
 language: ja
@@ -13,7 +16,7 @@ min_duration_off: 0.2 #两段语音之间的静音至少要持续这么久，才
 
 
 asr: large-v2  # Whisper模型，仅支持ctranslate2格式
-vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote “修复了原版模型强制登陆的bug”
+vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote，“修复了原版模型强制登陆的bug”
 
 
 output: #输出文件格式，可多选
