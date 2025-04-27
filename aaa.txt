@@ -152,7 +152,12 @@ for root, dirs, files in os.walk(config["work_path"]):
         srt_segments = []
         subtitle_index = 1
 
+        # 遍历每个音频组
         for group in groups:
+            # 计算当前音频组的第一段人声的起始时间
+            start_offset = group.segments[0].start_in_origin  # 第一段人声的起始时间
+
+            # 获取 ASR 结果
             segments, _ = asr_model.transcribe(
                 audio=group.audio,
                 beam_size=2,
@@ -165,6 +170,10 @@ for root, dirs, files in os.walk(config["work_path"]):
             for seg in segments:
                 start_real = map_back_time(seg.start, group.segments)
                 end_real = map_back_time(seg.end, group.segments)
+
+                # 计算偏移后的时间
+                start_real += start_offset
+                end_real += start_offset
 
                 srt_segments.append((subtitle_index, start_real, end_real, seg.text.strip()))
                 subtitle_index += 1
@@ -188,8 +197,3 @@ for root, dirs, files in os.walk(config["work_path"]):
 del asr_model
 gc.collect()
 torch.cuda.empty_cache()
-
-
-
-
-不对，每一段0到30分钟都要额外计算这一段中起始人声的原坐标
