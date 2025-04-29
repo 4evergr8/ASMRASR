@@ -14,7 +14,7 @@ min_duration_off: 0.2 #两段语音之间的静音至少要持续这么久，才
 
 separator: htdemucs_ft.yaml
 vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote，“修复了原版模型强制登陆的bug”
-asr: large-v2  # Whisper模型，仅支持ctranslate2格式
+asr: tiny  # Whisper模型，仅支持ctranslate2格式
 
 
 output: #输出文件格式，可多选
