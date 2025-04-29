@@ -12,13 +12,11 @@ def get_config():
     def get_path(config_value):
         path = os.path.join(os.getcwd(), config_value)
         os.makedirs(path, exist_ok=True)
-        print(f"创建文件夹: {path}")
         return path
 
     config["pre_path"] = get_path(config["pre_path"])
     config["work_path"] = get_path(config["work_path"])
     config["asr_path"] = get_path(config["asr_path"])
-    config["merge_path"] = get_path(config["merge_path"])
     config["model_path"] = get_path(config["model_path"])
     config["log_path"] = get_path(config["log_path"])
 
