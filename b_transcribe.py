@@ -127,6 +127,27 @@ for root, dirs, files in os.walk(config["work_path"]):
             audio_groups[group_index].segment_info_list.append(segment_info)
 
         del audio
+
+        for audio_group in audio_groups:
+            subs = pysrt.SubRipFile()
+            for segment in audio_group.segment_info_list:
+                sub = pysrt.SubRipItem(
+                    index=len(subs) + 1,  # 字幕索引
+                    start=pysrt.SubRipTime.from_ordinal(int(segment.group_start * 1000)),  # 转换 start 为 SRT 时间格式
+                    end=pysrt.SubRipTime.from_ordinal(int(segment.group_end * 1000)),  # 转换 end 为 SRT 时间格式
+                    text=segment.text  # 字幕内容
+                )
+                subs.append(sub)
+
+            # 设置输出 SRT 文件路径
+
+            srt_path = os.path.join(config["log_path"], f"before-{basename}.srt")
+            subs.save(srt_path)
+            print(f"log写入: {srt_path}")
+
+
+
+
         gc.collect()
         asr_model = WhisperModel(
             config["asr"],
@@ -134,6 +155,7 @@ for root, dirs, files in os.walk(config["work_path"]):
             compute_type=compute_type,
             download_root=config["model_path"]
         )
+        subs = pysrt.SubRipFile()
         for audio_group in audio_groups:
             segments, _ = asr_model.transcribe(
                 audio=audio_group.audio_array,
@@ -150,6 +172,14 @@ for root, dirs, files in os.walk(config["work_path"]):
 
                 best_match = None
                 max_overlap = 0.0
+
+                subtitle = pysrt.SubRipItem(
+                    index=len(subs) + 1,
+                    start=pysrt.SubRipTime.from_ordinal(int(seg_start * 1000)),  # 转换为毫秒
+                    end=pysrt.SubRipTime.from_ordinal(int(seg_end * 1000)),  # 转换为毫秒
+                    text=seg_text
+                )
+                subs.append(subtitle)
 
                 for segment_info in audio_group.segment_info_list:
                     # 求开始时间的最大值和结束时间的最小值
