@@ -1,8 +1,8 @@
 import os
-import shutil
 import subprocess
 from getconfig import get_config
 from imageio_ffmpeg import get_ffmpeg_exe
+from audio_separator.separator import Separator
 
 
 def preprocess(config):
@@ -29,6 +29,19 @@ def preprocess(config):
                 subprocess.run(command)
 
                 print(f"已提取音频并保存至：{audio_output_path}")
+
+
+
+        separator = Separator(
+            output_dir=config["work_path"],
+            model_file_dir=config["model_path"],
+            output_single_stem="vocals"
+        )
+        separator.load_model(model_filename=config["separator"])
+        output_files = separator.separate(config["pre_path"])
+        print(f"<UNK>{len(output_files)}")
+
+
 
         for filename in files:
             if filename.endswith((".wav", ".mp3", ".flac" )):
