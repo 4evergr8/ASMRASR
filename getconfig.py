@@ -1,6 +1,7 @@
 import os
 import yaml
 
+
 path: str = os.path.dirname(os.path.abspath(__file__))
 
 
