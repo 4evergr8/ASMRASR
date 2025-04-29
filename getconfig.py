@@ -12,8 +12,10 @@ def get_config():
     config["pre_path"] = os.path.join(path, config["pre_path"])
     config["work_path"] = os.path.join(path, config["work_path"])
     config["asr_path"] = os.path.join(path, config["asr_path"])
-    config["log_path"] = os.path.join(path, config["log_path"])
+    config["merge_path"] = os.path.join(path, config["merge_path"])
     config["model_path"] = os.path.join(path, config["model_path"])
+    config["log_path"] = os.path.join(path, config["log_path"])
+
 
     return config
 
