@@ -18,7 +18,7 @@ def preprocess(config):
                 command = [
                     "ffmpeg", "-i", video_path,  # 输入视频文件
                     "-vn",  # 不处理视频流，只提取音频
-                    "-acodec", "mp3",  # 设置音频编码器为 mp3
+                    "-acodec", "pcm_s16le",  # 设置音频编码器为 mp3
                     "-ar", "16000",  # 设置音频采样率
                     "-ac", "1",  # 设置音频为立体声
                     audio_output_path  # 输出路径
