@@ -35,7 +35,8 @@ def preprocess(config):
         separator = Separator(
             output_dir=config["work_path"],
             model_file_dir=config["model_path"],
-            output_single_stem="vocals"
+            output_single_stem="vocals",
+            demucs_params={"segment_size": "22", "shifts": 2, "overlap": 0.25, "segments_enabled": True},
         )
         separator.load_model(model_filename=config["separator"])
         output_files = separator.separate(config["pre_path"])
