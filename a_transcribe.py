@@ -3,6 +3,7 @@ import os
 import torch
 import numpy as np
 import librosa
+from audio_separator.separator import Separator
 
 from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
@@ -42,6 +43,26 @@ def transcribe(config):
             audio_path = os.path.join(root, filename)
             basename = os.path.splitext(filename)[0]
             print(f"处理音频: {audio_path}")
+
+            audio, sr = librosa.load(audio_path, sr=None)  # 不重采样
+            separator = Separator(
+                output_dir=config["work_path"],
+                output_single_stem="vocals",
+                demucs_params={"segment_size": "22", "shifts": 2, "overlap": 0.25, "segments_enabled": True},
+            )
+            separator.load_model(model_filename=config["separator"])
+            output_files = separator.separate(audio)
+            print(f"<UNK>{len(output_files)}")
+
+
+
+
+
+
+
+
+
+
 
             gc.collect()
             # 加载 VAD 模型
