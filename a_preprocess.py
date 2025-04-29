@@ -2,11 +2,13 @@ import os
 import shutil
 import subprocess
 from getconfig import get_config
+from imageio_ffmpeg import get_ffmpeg_exe
 
 
 def preprocess(config):
+    ffmpeg = get_ffmpeg_exe()
     os.system("chcp 65001")
-    # 遍历文件夹中的所有文件
+    
     for root, dirs, files in os.walk(config["pre_path"]):
         for filename in files:
             if filename.endswith((".mp4", ".mkv", ".avi", ".mov", ".flv")):
@@ -16,7 +18,7 @@ def preprocess(config):
                 audio_output_path = os.path.join(config["cut_path"], f"{basename}.wav")
 
                 command = [
-                    "ffmpeg", "-i", video_path,  # 输入视频文件
+                    ffmpeg, "-i", video_path,  # 输入视频文件
                     "-vn",  # 不处理视频流，只提取音频
                     "-acodec", "pcm_s16le",  # 设置音频编码器为 mp3
                     "-ar", "16000",  # 设置音频采样率
