@@ -19,6 +19,7 @@ asr: large-v2  # Whisper模型，仅支持ctranslate2格式
 
 output: #输出文件格式，可多选
   - lrc
+  - log
 #  - srt
 #  - vtt
 
