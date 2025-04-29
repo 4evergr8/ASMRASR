@@ -139,7 +139,6 @@ for root, dirs, files in os.walk(config["work_path"]):
                 )
                 subs.append(sub)
 
-            # 设置输出 SRT 文件路径
 
             srt_path = os.path.join(config["log_path"], f"before-{basename}.srt")
             subs.save(srt_path)
@@ -196,6 +195,10 @@ for root, dirs, files in os.walk(config["work_path"]):
 
                 if best_match and max_overlap > 0:
                     best_match.text = seg_text
+
+        srt_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
+        subs.save(srt_path)
+
 
         del asr_model
         gc.collect()
