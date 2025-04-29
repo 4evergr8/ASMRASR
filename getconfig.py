@@ -10,12 +10,6 @@ def get_config():
         config = yaml.safe_load(file)
 
     def get_path(config_value):
-        """
-        根据传入的路径值创建绝对路径并创建文件夹
-        :param config_value: 配置字典中的相对路径
-        :return: 返回创建的绝对路径
-        """
-
         path = os.path.join(os.getcwd(), config_value)
         os.makedirs(path, exist_ok=True)
         print(f"创建文件夹: {path}")
