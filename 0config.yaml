@@ -1,10 +1,8 @@
 #目录部分
 pre_path: a_pre #存放待提取视频
-cut_path: b_cut #存放待切分音频
-work_path: c_split #存放待分离音频
-
-asr_path: d_asr #存放转写结果
-merge_path: e_merge #存放翻译结果
+work_path: b_work #存放待分离音频
+asr_path: c_asr #存放转写结果
+merge_path: d_merge #存放翻译结果
 model_path: z_model #存放模型
 log_path: z_log #存放记录
 
@@ -14,9 +12,9 @@ space: 3 #人声段切割后间隔，单位为秒
 min_duration_on: 0.0 #一段语音至少要持续这么久，才认为是“有效语音段”，优先级高于min_duration_off
 min_duration_off: 0.2 #两段语音之间的静音至少要持续这么久，才认为是“真正的停顿”
 
-
-asr: large-v2  # Whisper模型，仅支持ctranslate2格式
+separator: htdemucs_ft.yaml
 vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote，“修复了原版模型强制登陆的bug”
+asr: large-v2  # Whisper模型，仅支持ctranslate2格式
 
 
 output: #输出文件格式，可多选
