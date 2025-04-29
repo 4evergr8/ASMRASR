@@ -79,9 +79,9 @@ for root, dirs, files in os.walk(config["work_path"]):
         print(f"\n处理音频: {audio_path}")
 
         # Step 1: 加载音频
-        audio, sr = librosa.load(audio_path, sr=16000, mono=True)
+        audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
 
-        # Step 2: VAD推理
+
         gc.collect()
         torch.cuda.empty_cache()
 
