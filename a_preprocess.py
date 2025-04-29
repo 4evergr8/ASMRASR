@@ -8,14 +8,14 @@ from imageio_ffmpeg import get_ffmpeg_exe
 def preprocess(config):
     ffmpeg = get_ffmpeg_exe()
     os.system("chcp 65001")
-    
+
     for root, dirs, files in os.walk(config["pre_path"]):
         for filename in files:
             if filename.endswith((".mp4", ".mkv", ".avi", ".mov", ".flv")):
                 video_path = os.path.join(root, filename)
 
                 basename = os.path.splitext(filename)[0]
-                audio_output_path = os.path.join(config["cut_path"], f"{basename}.wav")
+                audio_output_path = os.path.join(config["pre_path"], f"{basename}.wav")
 
                 command = [
                     ffmpeg, "-i", video_path,  # 输入视频文件
@@ -30,7 +30,9 @@ def preprocess(config):
 
                 print(f"已提取音频并保存至：{audio_output_path}")
 
-
+        for filename in files:
+            if filename.endswith((".wav", ".mp3", ".flac" )):
+                audio_path = os.path.join(root, filename)
 
 if __name__ == "__main__":
     preprocess(get_config())
