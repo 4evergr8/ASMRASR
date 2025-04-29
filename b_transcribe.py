@@ -11,12 +11,12 @@ from dataclasses import dataclass
 import os
 
 # 配置
-path = '/content/gdrive/MyDrive/ASR'
+path = '/content/gdrive/MyDrive'
 config = {
     "work_path": "1work",
     "asr_path": "1work",
     "log_path": "log",
-    "model_path": "model",
+    "model_path": "/content",
 
     "prompt": "",
     "language": "ja",
@@ -27,7 +27,7 @@ config = {
     "asr": "large-v2",
     "vad": "4evergr8/pyannote-segmentation-3.0",
 
-    "output": ["lrc", "srt", "vtt"]
+    "output": ["lrc", "srt", "vtt","log"]
 }
 
 config["work_path"] = os.path.join(path, config["work_path"])
@@ -47,20 +47,7 @@ class AudioData:
     audio_array: np.ndarray
     segment_info_list: list
 
-# 工具函数
-def timestamp_to_srt(ts: float) -> str:
-    hours = int(ts // 3600)
-    minutes = int((ts % 3600) // 60)
-    seconds = int(ts % 60)
-    millis = int((ts - int(ts)) * 1000)
-    return f"{hours:02}:{minutes:02}:{seconds:02},{millis:03}"
 
-def map_back_time(time_in_concat, segments):
-    for seg in segments:
-        if seg.start_in_concat <= time_in_concat <= seg.end_in_concat:
-            relative = time_in_concat - seg.start_in_concat
-            return seg.start_in_origin + relative
-    return segments[-1].end_in_origin
 
 
 # 硬件
