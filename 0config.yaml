@@ -2,7 +2,7 @@
 pre_path: a_pre #存放待提取视频
 work_path: b_work #存放待分离音频
 asr_path: c_asr #存放转写结果
-merge_path: d_merge #存放翻译结果
+tsl_path: d_tsl
 model_path: z_model #存放模型
 log_path: z_log #存放记录
 
