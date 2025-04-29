@@ -1,7 +1,9 @@
 PyYAML==6.0.2
 torch==2.7.0
 numpy==2.2.5
-librosa==0.11.0
+librosa
 pyannote.audio
 faster_whisper
 imageio_ffmpeg
+pysrt
+audio_separator
