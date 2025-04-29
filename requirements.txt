@@ -4,3 +4,4 @@ numpy==2.2.5
 librosa==0.11.0
 pyannote.audio
 faster_whisper
+imageio_ffmpeg
