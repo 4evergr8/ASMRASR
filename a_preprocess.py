@@ -30,16 +30,14 @@ def preprocess(config):
 
                 print(f"已提取音频并保存至：{audio_output_path}")
 
-
-
+        audio, sr = librosa.load(audio_path, sr=None)  # 不重采样
         separator = Separator(
             output_dir=config["work_path"],
-            model_file_dir=config["model_path"],
             output_single_stem="vocals",
             demucs_params={"segment_size": "22", "shifts": 2, "overlap": 0.25, "segments_enabled": True},
         )
         separator.load_model(model_filename=config["separator"])
-        output_files = separator.separate(config["pre_path"])
+        output_files = separator.separate(audio)
         print(f"<UNK>{len(output_files)}")
 
 
