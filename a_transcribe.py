@@ -22,7 +22,12 @@ class AudioSegmentGroup:
     audio: np.ndarray
     segments: list
 
-
+def timestamp_to_srt(ts: float) -> str:
+    hours = int(ts // 3600)
+    minutes = int((ts % 3600) // 60)
+    seconds = int(ts % 60)
+    millis = int((ts - int(ts)) * 1000)
+    return f"{hours:02}:{minutes:02}:{seconds:02},{millis:03}"
 
 def transcribe(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -53,7 +58,7 @@ def transcribe(config):
             gc.collect()
 
 
-            audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
+            audio, sr = librosa.load(audio_path, sr=16000, mono=True)
 
             silence = np.zeros(int(sr * config["space"]), dtype=audio.dtype)
 
