@@ -29,22 +29,37 @@ def preprocess(config):
                 subprocess.run(command)
 
                 print(f"已提取音频并保存至：{audio_output_path}")
-
-        audio, sr = librosa.load(audio_path, sr=None)  # 不重采样
-        separator = Separator(
-            output_dir=config["work_path"],
-            output_single_stem="vocals",
-            demucs_params={"segment_size": "22", "shifts": 2, "overlap": 0.25, "segments_enabled": True},
-        )
-        separator.load_model(model_filename=config["separator"])
-        output_files = separator.separate(audio)
-        print(f"<UNK>{len(output_files)}")
-
-
-
+    for root, dirs, files in os.walk(config["pre_path"]):
         for filename in files:
-            if filename.endswith((".wav", ".mp3", ".flac" )):
+            if filename.endswith((".wav", ".mp3", ".flac")):
                 audio_path = os.path.join(root, filename)
+
+                separator = Separator(
+                    output_dir=config["work_path"],
+                    output_single_stem="vocals",
+                    use_soundfile=True,
+                )
+                separator.load_model(model_filename=config["separator"])
+                output_files = separator.separate(audio_path)
+                print(f"<UNK>{len(output_files)}")
+
+                slice_dir = os.path.join(config["pre_path"], "slice")
+                os.makedirs(slice_dir, exist_ok=True)
+
+                # 使用 -f segment 命令进行音频切割
+                segment_length = 1200  # 20 分钟 = 1200 秒
+
+                # 使用 ffmpeg 的 segment 命令来切割音频
+                command = [
+                    "ffmpeg", "-i", audio_path,  # 输入音频文件
+                    "-f", "segment",  # 使用 segment 格式进行切割
+                    "-segment_time", str(segment_length),  # 设置每段的时长（单位：秒）
+                    "-c", "copy",  # 保持原始编码（无损切割）
+                    os.path.join(slice_dir, "%03d.wav")  # 输出文件的命名格式
+                ]
+                subprocess.run(command)
+
+
 
 if __name__ == "__main__":
     preprocess(get_config())
