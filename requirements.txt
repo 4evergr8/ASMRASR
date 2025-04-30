@@ -1,4 +1,4 @@
-PyYAML==6.0.2
+PyYAML
 torch==2.7.0
 numpy==2.2.5
 librosa
@@ -7,3 +7,4 @@ faster_whisper
 imageio_ffmpeg
 pysrt
 audio_separator
+google-generativeai
