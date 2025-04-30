@@ -62,7 +62,9 @@ def preprocess(config):
                     model_file_dir=config["model_path"],
                     output_dir=os.path.join(config["pre_path"],'split'),
                     output_single_stem="vocals",
-                    sample_rate=16000
+                    sample_rate=16000,
+                    mdxc_params={"segment_size": 256, "override_model_segment_size": False, "batch_size": config["batch_size"],
+                                 "overlap": 8, "pitch_shift": 0}
                 )
                 separator.load_model(model_filename=config["separator"])
                 output_files = separator.separate(os.path.join(config["pre_path"], "slice"))
