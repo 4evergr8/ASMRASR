@@ -34,23 +34,11 @@ def preprocess(config):
             if filename.endswith((".wav", ".mp3", ".flac")):
                 audio_path = os.path.join(root, filename)
 
-                separator = Separator(
-                    output_dir=config["work_path"],
-                    output_single_stem="vocals",
-                    use_soundfile=True,
-                )
-                separator.load_model(model_filename=config["separator"])
-                output_files = separator.separate(audio_path)
-                print(f"<UNK>{len(output_files)}")
-                '''
+
 
                 slice_dir = os.path.join(config["pre_path"], "slice")
                 os.makedirs(slice_dir, exist_ok=True)
-
-                # 使用 -f segment 命令进行音频切割
-                segment_length = 1200  # 20 分钟 = 1200 秒
-
-                # 使用 ffmpeg 的 segment 命令来切割音频
+                segment_length = 120  # 20 分钟 = 1200 秒
                 command = [
                     "ffmpeg", "-i", audio_path,  # 输入音频文件
                     "-f", "segment",  # 使用 segment 格式进行切割
@@ -59,7 +47,19 @@ def preprocess(config):
                     os.path.join(slice_dir, "%03d.wav")  # 输出文件的命名格式
                 ]
                 subprocess.run(command)
-                '''
+
+
+
+                separator = Separator(
+                    output_dir=config["work_path"],
+                    output_single_stem="vocals",
+                    sample_rate=16000
+                )
+                separator.load_model(model_filename=config["separator"])
+                output_files = separator.separate(audio_path)
+                print(f"<UNK>{len(output_files)}")
+
+
 
 
 
