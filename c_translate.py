@@ -1,27 +1,27 @@
 import os
 import pysrt
 from getconfig import get_config
-import google.genai as genai
+import google.genai
+from google.genai import types
 
-# 配置 API 密钥
-genai.configure(api_key="YOUR_API_KEY")
+# 初始化客户端
+client = google.genai.Client(api_key="your-api-key")
 
-# 创建模型实例
-model = genai.GenerativeModel("gemini-pro")
+# 创建聊天会话
+chat = client.chats.create(model="gemini-2.0-flash",config=types.GenerateContentConfig(
+        system_instruction="You are a cat. Your name is Neko."),)
 
-# 启动聊天会话
-chat = model.start_chat()
+# 发送第一条消息
+response = chat.send_message("我家里有两只狗。")
+print("模型回答:", response.text)
 
-# 进行多轮对话
-while True:
-    user_input = input("你：")
-    if user_input.lower() in ["exit", "quit", "退出"]:
-        break
+# 发送第二条消息
+response = chat.send_message("那我家里总共有多少只爪子？")
+print("模型回答:", response.text)
 
-    response = chat.send_message(user_input)
-    print("Gemini：", response.text)
-
-
+# 输出聊天历史
+for message in chat.get_history():
+    print(f'{message.role}: {message.parts[0].text}')
 
 
 
