@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from getconfig import get_config
 from imageio_ffmpeg import get_ffmpeg_exe
@@ -34,24 +35,22 @@ def preprocess(config):
             if filename.endswith((".wav", ".mp3", ".flac")):
                 audio_path = os.path.join(root, filename)
 
+                shutil.rmtree(os.path.join(config["pre_path"], "slice"), ignore_errors=True)
 
-
-                slice_dir = os.path.join(config["pre_path"], "slice")
-                os.makedirs(slice_dir, exist_ok=True)
                 segment_length = 120  # 20 分钟 = 1200 秒
                 command = [
                     "ffmpeg", "-i", audio_path,  # 输入音频文件
                     "-f", "segment",  # 使用 segment 格式进行切割
                     "-segment_time", str(segment_length),  # 设置每段的时长（单位：秒）
                     "-c", "copy",  # 保持原始编码（无损切割）
-                    os.path.join(slice_dir, "%03d.wav")  # 输出文件的命名格式
+                    os.path.join(os.path.join(config["pre_path"], "slice"), "%03d.wav")  # 输出文件的命名格式
                 ]
                 subprocess.run(command)
 
-
-
+                shutil.rmtree(os.path.join(config["pre_path"], "split"), ignore_errors=True)
                 separator = Separator(
-                    output_dir=config["work_path"],
+                    model_file_dir=config["model_path"],
+                    output_dir=os.path.join(config["pre_path"],'split'),
                     output_single_stem="vocals",
                     sample_rate=16000
                 )
@@ -61,6 +60,25 @@ def preprocess(config):
 
 
 
+
+                file_list = sorted(
+                    [f for f in os.listdir(os.path.join(config["pre_path"],'split')) if f.endswith(".wav")],
+                    key=lambda x: int(x[:3])
+                )
+                concat_input = "|".join([os.path.join(os.path.join(config["pre_path"],'split'), f) for f in file_list])
+
+                basename = os.path.splitext(filename)[0]
+                output_path = os.path.join(config["work_path"], f"{basename}.wav")
+
+                command = [
+                    "ffmpeg",
+                    "-i", f"concat:{concat_input}",
+                    "-c", "copy",
+                    output_path
+                ]
+
+                subprocess.run(command)
+                print(f"合并完成：{output_path}")
 
 
 if __name__ == "__main__":
