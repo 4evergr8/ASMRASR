@@ -17,8 +17,10 @@ def get_config():
     config["pre_path"] = get_path(config["pre_path"])
     config["work_path"] = get_path(config["work_path"])
     config["asr_path"] = get_path(config["asr_path"])
+    config["tsl_path"] = get_path(config["tsl_path"])
     config["model_path"] = get_path(config["model_path"])
     config["log_path"] = get_path(config["log_path"])
+
 
     return config
 
