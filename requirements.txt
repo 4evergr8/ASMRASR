@@ -7,4 +7,4 @@ faster_whisper
 imageio_ffmpeg
 pysrt
 audio_separator
-google-generativeai
+google-genai
