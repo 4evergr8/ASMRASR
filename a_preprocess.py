@@ -30,12 +30,17 @@ def preprocess(config):
                 subprocess.run(command)
 
                 print(f"已提取音频并保存至：{audio_output_path}")
+
+
+
     for root, dirs, files in os.walk(config["pre_path"]):
         for filename in files:
             if filename.endswith((".wav", ".mp3", ".flac")):
                 audio_path = os.path.join(root, filename)
 
-                shutil.rmtree(os.path.join(config["pre_path"], "slice"), ignore_errors=True)
+                if os.path.exists(os.path.join(config["pre_path"], "slice")):
+                    shutil.rmtree(os.path.join(config["pre_path"], "slice"))  # 删除原文件夹及其内容
+                os.makedirs(os.path.join(config["pre_path"], "slice"))  # 创建新文件夹
 
                 segment_length = 120  # 20 分钟 = 1200 秒
                 command = [
@@ -47,7 +52,12 @@ def preprocess(config):
                 ]
                 subprocess.run(command)
 
-                shutil.rmtree(os.path.join(config["pre_path"], "split"), ignore_errors=True)
+
+
+
+                if os.path.exists(os.path.join(config["pre_path"], "split")):
+                    shutil.rmtree(os.path.join(config["pre_path"], "split"))  # 删除原文件夹及其内容
+                os.makedirs(os.path.join(config["pre_path"], "split"))  # 创建新文件夹
                 separator = Separator(
                     model_file_dir=config["model_path"],
                     output_dir=os.path.join(config["pre_path"],'split'),
@@ -55,7 +65,7 @@ def preprocess(config):
                     sample_rate=16000
                 )
                 separator.load_model(model_filename=config["separator"])
-                output_files = separator.separate(audio_path)
+                output_files = separator.separate(os.path.join(config["pre_path"], "slice"))
                 print(f"<UNK>{len(output_files)}")
 
 
