@@ -1,17 +1,26 @@
 import os
 import pysrt
 from getconfig import get_config
-import google.generativeai as genai
+import google.genai as genai
 
-# 替换为你的 API Key
-genai.configure(api_key="你的_API_Key")
+# 配置 API 密钥
+genai.configure(api_key="YOUR_API_KEY")
 
-# 选择模型
-model = genai.GenerativeModel('gemini-pro')
+# 创建模型实例
+model = genai.GenerativeModel("gemini-pro")
 
-# 开始对话
-response = model.generate_content("介绍一下量子力学")
-print(response.text)
+# 启动聊天会话
+chat = model.start_chat()
+
+# 进行多轮对话
+while True:
+    user_input = input("你：")
+    if user_input.lower() in ["exit", "quit", "退出"]:
+        break
+
+    response = chat.send_message(user_input)
+    print("Gemini：", response.text)
+
 
 
 
@@ -22,8 +31,8 @@ def translate(config):
             if filename.endswith((".srt")):
                 srt_path = os.path.join(root, filename)
                 subs = pysrt.open(srt_path, encoding='utf-8')
-                for i in range(0, len(subs), 10):
-                    chunk = subs[i:i + 10]
+                for i in range(0, len(subs), 100):
+                    chunk = subs[i:i + 100]
                     for sub in chunk:
                         # 在这里处理每个 subtitle 对象
                         print(sub.text)
