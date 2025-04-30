@@ -42,6 +42,7 @@ def preprocess(config):
                 separator.load_model(model_filename=config["separator"])
                 output_files = separator.separate(audio_path)
                 print(f"<UNK>{len(output_files)}")
+                '''
 
                 slice_dir = os.path.join(config["pre_path"], "slice")
                 os.makedirs(slice_dir, exist_ok=True)
@@ -58,6 +59,7 @@ def preprocess(config):
                     os.path.join(slice_dir, "%03d.wav")  # 输出文件的命名格式
                 ]
                 subprocess.run(command)
+                '''
 
 
 
