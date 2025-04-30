@@ -150,7 +150,9 @@ def transcribe(config):
                 config["asr"],
                 device=device,
                 compute_type=compute_type,
-                download_root=config["model_path"]
+                download_root=config["model_path"],
+                num_workers=config["num_workers"]
+
             )
             subs = pysrt.SubRipFile()
             for audio_group in audio_groups:
