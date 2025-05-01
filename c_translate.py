@@ -10,13 +10,10 @@ from google.genai import types
 
 
 def translate(config):
-    for root, dirs, files in os.walk(config["asr_path"]):
-        for filename in files:
-            if filename.endswith((".srt")):
-
-
-
-                srt_path = os.path.join(root, filename)
+    for filename in os.listdir(config["pre_path"]):
+        if filename.endswith(".srt"):
+            srt_path = os.path.join(config["pre_path"], filename)
+            if os.path.isfile(srt_path):
                 subs = pysrt.open(srt_path, encoding='utf-8')
 
                 for i in range(0, len(subs), 100):
