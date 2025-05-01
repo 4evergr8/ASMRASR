@@ -17,7 +17,7 @@ min_duration_off: 0.2 #两段语音之间的静音至少要持续这么久，才
 space: 2 #人声段切割后空白间隔，单位为秒
 language: ja
 num_workers: 1
-api_key: 
+api_key:
 prompt: |
   你是一名专业的翻译家，请你按照以下流程进行翻译：
   第一步：初步直译
