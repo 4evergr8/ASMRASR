@@ -10,10 +10,13 @@ def preprocess(config):
     ffmpeg = get_ffmpeg_exe()
     os.system("chcp 65001")
 
-    for root, dirs, files in os.walk(config["pre_path"]):
-        for filename in files:
-            if filename.endswith((".mp4", ".mkv", ".avi", ".mov", ".flv")):
-                video_path = os.path.join(root, filename)
+
+        # 处理 audio_path
+
+    for filename in os.listdir(config["pre_path"]):
+        if filename.endswith((".mp4", ".mkv", ".avi", ".mov", ".flv")):
+            video_path = os.path.join(config["pre_path"], filename)
+            if os.path.isfile(video_path):
 
                 basename = os.path.splitext(filename)[0]
                 audio_output_path = os.path.join(config["pre_path"], f"{basename}.wav")
@@ -31,12 +34,10 @@ def preprocess(config):
 
                 print(f"已提取音频并保存至：{audio_output_path}")
 
-
-
-    for root, dirs, files in os.walk(config["pre_path"]):
-        for filename in files:
-            if filename.endswith((".wav", ".mp3", ".flac")):
-                audio_path = os.path.join(root, filename)
+    for filename in os.listdir(config["pre_path"]):
+        if filename.endswith((".wav", ".mp3", ".flac")):
+            audio_path = os.path.join(config["pre_path"], filename)
+            if os.path.isfile(audio_path):
 
                 if os.path.exists(os.path.join(config["pre_path"], "slice")):
                     shutil.rmtree(os.path.join(config["pre_path"], "slice"))  # 删除原文件夹及其内容
