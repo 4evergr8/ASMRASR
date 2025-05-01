@@ -37,9 +37,13 @@ def transcribe(config):
 
 
     # 遍历所有音频
-    for root, dirs, files in os.walk(config["work_path"]):
-        for filename in files:
-            audio_path = os.path.join(root, filename)
+
+
+
+
+    for filename in os.listdir(config["pre_path"]):
+        if filename.endswith((".wav", ".mp3", ".flac")):
+            audio_path = os.path.join(config["pre_path"], filename)
             basename = os.path.splitext(filename)[0]
             print(f"\n处理音频: {audio_path}")
 
