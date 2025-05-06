@@ -53,7 +53,7 @@ def preprocess(config):
 
                 segment_length = 120  # 20 分钟 = 1200 秒
                 command = [
-                    "ffmpeg", "-i", audio_path,  # 输入音频文件
+                    ffmpeg, "-i", audio_path,  # 输入音频文件
                     "-f", "segment",  # 使用 segment 格式进行切割
                     "-segment_time", str(segment_length),  # 设置每段的时长（单位：秒）
                     "-c", "copy",  # 保持原始编码（无损切割）
@@ -77,12 +77,15 @@ def preprocess(config):
                 for filename in os.listdir(slice_path):
                     if filename.endswith(".wav"):
                         slice_basename = os.path.splitext(filename)[0]  # 比如 '001'
-                        exists = any(slice_basename in f for f in os.listdir(split_path))
+                        exists = any(name.startswith(slice_basename) for name in os.listdir(split_path))
                         if not exists:
                             output_files = separator.separate(os.path.join(slice_path, filename))
                             print(f"<UNK>{len(output_files)}")
                         else:
                             print(f"已存在分离结果，跳过：{filename}")
+
+
+
 
                 file_list = sorted(
                     [f for f in os.listdir(os.path.join(config["pre_path"], 'split')) if f.endswith(".wav")],
@@ -94,9 +97,9 @@ def preprocess(config):
                         f.write(f"file '{full_path}'\n")
 
                 basename = os.path.splitext(filename)[0]
-                output_path = os.path.join(config["work_path"], f"{basename}.wav")
+                output_path = os.path.join(config["work_path"], f"merge-{basename}.wav")
                 command = [
-                    "ffmpeg",
+                    ffmpeg,
                     "-f", "concat",
                     "-safe", "0",
                     "-i", os.path.join(config["pre_path"], f"{basename}_list.txt"),
@@ -104,6 +107,35 @@ def preprocess(config):
                     output_path
                 ]
                 subprocess.run(command)
+
+
+
+
+
+
+
+
+    for filename in os.listdir(config["work_path"]):
+        if filename.endswith(".wav") and filename.startswith("merge-"):
+            audio_path = os.path.join(config["work_path"], filename)
+            basename = os.path.splitext(filename)[0]
+            basename = basename.replace('merge-', "")
+            output_path = os.path.join(config["work_path"], f"{basename}.wav")
+            cmd = [
+                ffmpeg,
+                "-i", audio_path,  # 输入音频文件
+                "-af", "volume=1.5",  # 音量增强的设置
+                output_path  # 输出增强后的音频文件
+            ]
+
+
+
+
+            print("正在分析音频响度并输出为 JSON...")
+
+            # 执行 ffmpeg 命令，将响度分析结果保存为 JSON 文件
+            subprocess.run(cmd)
+
 
 
 if __name__ == "__main__":
