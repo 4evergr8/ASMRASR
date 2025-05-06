@@ -64,11 +64,11 @@ def translate(config):
                             break
                         else:
                             print("返回行数与原始字幕不一致，等待重试...")
-                            time.sleep(2)
+                            time.sleep(5)
 
                     except Exception as e:
                         print(f"异常：{e}")
-                        time.sleep(3)
+                        time.sleep(5)
 
             # 保存翻译后的字幕，只写入 translated_subs
             srt_path = os.path.join(config['tsl_path'], filename)
