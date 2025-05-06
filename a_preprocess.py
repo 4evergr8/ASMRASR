@@ -42,12 +42,14 @@ def preprocess(config):
     for filename in os.listdir(config["pre_path"]):
         if filename.endswith((".wav", ".mp3", ".flac")):
             basename = os.path.splitext(filename)[0]
+            slice_path = os.path.join(config["pre_path"], f"{basename}-slice")
+            split_path = os.path.join(config["pre_path"], f"{basename}-split")
             audio_path = os.path.join(config["pre_path"], filename)
             if os.path.isfile(audio_path):
 
-                if os.path.exists(os.path.join(config["pre_path"], "slice")):
-                    shutil.rmtree(os.path.join(config["pre_path"], "slice"))  # 删除原文件夹及其内容
-                os.makedirs(os.path.join(config["pre_path"], "slice"))  # 创建新文件夹
+                if os.path.exists(slice_path):
+                    shutil.rmtree(slice_path)  # 删除原文件夹及其内容
+                os.makedirs(slice_path)  # 创建新文件夹
 
                 segment_length = 120  # 20 分钟 = 1200 秒
                 command = [
@@ -55,49 +57,53 @@ def preprocess(config):
                     "-f", "segment",  # 使用 segment 格式进行切割
                     "-segment_time", str(segment_length),  # 设置每段的时长（单位：秒）
                     "-c", "copy",  # 保持原始编码（无损切割）
-                    os.path.join(os.path.join(config["pre_path"], "slice"), "%03d.wav")  # 输出文件的命名格式
+                    os.path.join(slice_path, "%03d.wav")  # 输出文件的命名格式
                 ]
                 subprocess.run(command)
 
 
 
 
-                if os.path.exists(os.path.join(config["pre_path"], "split")):
-                    shutil.rmtree(os.path.join(config["pre_path"], "split"))  # 删除原文件夹及其内容
-                os.makedirs(os.path.join(config["pre_path"], "split"))  # 创建新文件夹
+
                 separator = Separator(
                     model_file_dir=config["model_path"],
-                    output_dir=os.path.join(config["pre_path"],'split'),
+                    output_dir=split_path,
                     output_single_stem="vocals",
                     sample_rate=16000,
                     mdxc_params={"segment_size": 256, "override_model_segment_size": False, "batch_size": config["batch_size"],
                                  "overlap": 8, "pitch_shift": 0}
                 )
                 separator.load_model(model_filename=config["separator"])
-                output_files = separator.separate(os.path.join(config["pre_path"], "slice"))
-                print(f"<UNK>{len(output_files)}")
-
-
-
+                for filename in os.listdir(slice_path):
+                    if filename.endswith(".wav"):
+                        slice_basename = os.path.splitext(filename)[0]  # 比如 '001'
+                        exists = any(slice_basename in f for f in os.listdir(split_path))
+                        if not exists:
+                            output_files = separator.separate(os.path.join(slice_path, filename))
+                            print(f"<UNK>{len(output_files)}")
+                        else:
+                            print(f"已存在分离结果，跳过：{filename}")
 
                 file_list = sorted(
-                    [f for f in os.listdir(os.path.join(config["pre_path"],'split')) if f.endswith(".wav")],
+                    [f for f in os.listdir(os.path.join(config["pre_path"], 'split')) if f.endswith(".wav")],
                     key=lambda x: int(x[:3])
                 )
-                concat_input = "|".join([os.path.join(os.path.join(config["pre_path"],'split'), f) for f in file_list])
+                with open(os.path.join(config["pre_path"], f"{basename}_list.txt"), "w", encoding="utf-8") as f:
+                    for f_name in file_list:
+                        full_path = os.path.join(config["pre_path"], 'split', f_name)
+                        f.write(f"file '{full_path}'\n")
 
-
+                basename = os.path.splitext(filename)[0]
                 output_path = os.path.join(config["work_path"], f"{basename}.wav")
-
                 command = [
                     "ffmpeg",
-                    "-i", f"concat:{concat_input}",
+                    "-f", "concat",
+                    "-safe", "0",
+                    "-i", os.path.join(config["pre_path"], f"{basename}_list.txt"),
                     "-c", "copy",
                     output_path
                 ]
-
                 subprocess.run(command)
-                print(f"合并完成：{output_path}")
 
 
 if __name__ == "__main__":
