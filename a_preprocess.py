@@ -34,8 +34,14 @@ def preprocess(config):
 
                 print(f"已提取音频并保存至：{audio_output_path}")
 
+
+
+
+
+
     for filename in os.listdir(config["pre_path"]):
         if filename.endswith((".wav", ".mp3", ".flac")):
+            basename = os.path.splitext(filename)[0]
             audio_path = os.path.join(config["pre_path"], filename)
             if os.path.isfile(audio_path):
 
@@ -80,7 +86,7 @@ def preprocess(config):
                 )
                 concat_input = "|".join([os.path.join(os.path.join(config["pre_path"],'split'), f) for f in file_list])
 
-                basename = os.path.splitext(filename)[0]
+
                 output_path = os.path.join(config["work_path"], f"{basename}.wav")
 
                 command = [
