@@ -10,7 +10,7 @@ def translate(config):
     for filename in os.listdir(config["asr_path"]):
         if not filename.endswith(".srt"):
             continue
-
+        basename = os.path.splitext(filename)[0]
         src_path = os.path.join(config["asr_path"], filename)
         dst_path = os.path.join(config["tsl_path"], filename)
 
@@ -37,7 +37,7 @@ def translate(config):
             chat = client.chats.create(
                 model=config['translate'],
                 config=types.GenerateContentConfig(
-                    system_instruction=config["prompt"] + "\n" + "\n".join(sub.text for sub in chunk),
+                    system_instruction=config["prompt"].format(basename=basename) + "\n" + "\n".join(sub.text for sub in chunk),
                 )
             )
 
