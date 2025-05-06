@@ -2,6 +2,8 @@ import os
 import time
 import pysrt
 from google import genai
+from google.genai.types import SafetySetting, HarmCategory, HarmBlockThreshold
+
 from getconfig import get_config
 from google.genai import types
 
@@ -30,20 +32,21 @@ def translate(config):
         original_subs = original_subs[len(translated_subs):]
 
         # 翻译剩余部分
-        for i in range(0, len(original_subs), 100):
-            chunk = original_subs[i:i + 100]
+        for i in range(0, len(original_subs), 200):
+            chunk = original_subs[i:i + 200]
 
             client = genai.Client(api_key=config["api_key"])
             chat = client.chats.create(
                 model=config['translate'],
                 config=types.GenerateContentConfig(
-                    system_instruction=config["prompt"].format(basename=basename) + "\n" + "\n".join(sub.text for sub in chunk),
+                    system_instruction=config["prompt"].format(basename=basename) + "\n" + "\n".join(
+                        sub.text for sub in chunk),
                 )
             )
 
             for j in range(0, len(chunk), 10):
                 sub_chunk = chunk[j:j + 10]
-                prompt = "\n".join(f"{k + 1}|{sub.text}" for k, sub in enumerate(sub_chunk))
+                prompt = "要翻译的部分\n".join(f"{k + 1}|{sub.text}" for k, sub in enumerate(sub_chunk))
 
                 while True:
                     try:
@@ -60,7 +63,7 @@ def translate(config):
 
                             # 提示翻译成功
                             print(f"翻译成功: {len(translated_subs)} 行已翻译.")
-                            time.sleep(3)  # 成功后稍微等待
+                            time.sleep(5)  # 成功后稍微等待
                             break
                         else:
                             print("返回行数与原始字幕不一致，等待重试...")
@@ -68,6 +71,8 @@ def translate(config):
 
                     except Exception as e:
                         print(f"异常：{e}")
+                        print(f"发送：{prompt}")
+                        print(f"接收：{response}")
                         time.sleep(5)
 
             # 保存翻译后的字幕，只写入 translated_subs
