@@ -8,7 +8,7 @@ log_path: z_log #存放记录
 #模型配置
 separator: MDX23C-8KFFT-InstVoc_HQ_2.ckpt #人声分离模型
 vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote，“修复了原版模型强制登陆的bug”
-asr: large-v3  # Whisper模型，仅支持ctranslate2格式
+asr: large-v2  # Whisper模型，仅支持ctranslate2格式
 translate: gemini-1.5-flash
 #推理配置
 batch_size: 8
