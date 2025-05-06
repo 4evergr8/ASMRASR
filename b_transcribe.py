@@ -194,11 +194,10 @@ def transcribe(config):
 
                         # 只有当重合时长大于零时，才可能是一个有效的匹配
                         if overlap_duration >= max_overlap:
-                            max_overlap = overlap_duration
-                            best_match = segment_info
+                            segment_info.text = seg_text
+                            break
 
-                    if best_match and max_overlap > 0:
-                        best_match.text = seg_text
+
 
             srt_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
             subs.save(srt_path)
