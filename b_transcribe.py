@@ -143,15 +143,18 @@ def transcribe(config):
 
             )
             for audio_group in audio_groups:
-                segments, _ = asr_model.transcribe(
+                segments, info = asr_model.transcribe(
                     audio=audio_group.audio_array,
                     beam_size=3,
                     vad_filter=False,
                     initial_prompt=basename,
                     language=config['language']
                 )
+                print(segments)
 
                 for segment_info in audio_group.segment_info_list:
+
+                    segment_info=segment_info
                     for seg in segments:
                         print(segment_info)
                         seg_start = seg.start
@@ -163,10 +166,9 @@ def transcribe(config):
                         overlap_end = min(seg_end, segment_info.group_end)
                         overlap_duration =  overlap_end-overlap_start
                         if overlap_duration > 0:
-                            match = seg_text
+                            segment_info.text = '1111'
                             print(segment_info.text)
                             break
-                    result
 
 
 
