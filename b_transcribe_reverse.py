@@ -49,7 +49,7 @@ def transcribe(config):
         # 创建日志对象
         vad_log = pysrt.SubRipFile()
         current_group_idx = 1000  # 当前组的编号起始值
-        current_group_end_time = 60  # 当前组的结束时间
+        current_group_end_time = 1800  # 当前组的结束时间
 
         for segment in timeline:
             segment_end = segment.end
