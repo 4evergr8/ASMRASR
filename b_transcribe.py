@@ -190,9 +190,8 @@ def transcribe(config):
                         overlap_end = min(seg_end, segment_info.group_end)
 
                         # 如果重合时间大于零，计算重合时长
-                        overlap_duration = max(0.0, overlap_end - overlap_start)
+                        overlap_duration = overlap_end - overlap_start
 
-                        # 只有当重合时长大于零时，才可能是一个有效的匹配
                         if overlap_duration >= max_overlap:
                             max_overlap = overlap_duration
                             best_match = segment_info
