@@ -159,6 +159,7 @@ def transcribe(config):
 
             )
             subs = pysrt.SubRipFile()
+
             for audio_group in audio_groups:
                 segments, _ = asr_model.transcribe(
                     audio=audio_group.audio_array,
@@ -168,23 +169,22 @@ def transcribe(config):
                     language=config['language']
                 )
 
-                for seg in segments:
-                    seg_start = seg.start
-                    seg_end = seg.end
-                    seg_text = seg.text.strip()
 
-                    best_match = None
-                    max_overlap = 0.0
+                for segment_info in audio_group.segment_info_list:
+                    # 遍历每个原有时间段（segment_info），并匹配所有的 ASR 段
+                    for seg in segments:
+                        seg_start = seg.start
+                        seg_end = seg.end
+                        seg_text = seg.text.strip()
 
-                    subtitle = pysrt.SubRipItem(
-                        index=len(subs) + 1,
-                        start=pysrt.SubRipTime.from_ordinal(int(seg_start * 1000)),  # 转换为毫秒
-                        end=pysrt.SubRipTime.from_ordinal(int(seg_end * 1000)),  # 转换为毫秒
-                        text=seg_text
-                    )
-                    subs.append(subtitle)
+                        subtitle = pysrt.SubRipItem(
+                            index=len(subs) + 1,
+                            start=pysrt.SubRipTime.from_ordinal(int(seg_start * 1000)),  # 转换为毫秒
+                            end=pysrt.SubRipTime.from_ordinal(int(seg_end * 1000)),  # 转换为毫秒
+                            text=seg_text
+                        )
+                        subs.append(subtitle)
 
-                    for segment_info in audio_group.segment_info_list:
                         # 求开始时间的最大值和结束时间的最小值
                         overlap_start = max(seg_start, segment_info.group_start)
                         overlap_end = min(seg_end, segment_info.group_end)
@@ -193,11 +193,9 @@ def transcribe(config):
                         overlap_duration = max(0.0, overlap_end - overlap_start)
 
                         # 只有当重合时长大于零时，才可能是一个有效的匹配
-                        if overlap_duration >= max_overlap:
+                        if overlap_duration > 0:
                             segment_info.text = seg_text
-                            break
-
-
+                            break  # 找到匹配就退出当前 ASR 循环，继续匹配下一段 segment_info
 
             srt_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
             subs.save(srt_path)
