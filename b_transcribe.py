@@ -42,16 +42,15 @@ def transcribe(config):
 
             timeline = vad_result.get_timeline()
             vad_log = pysrt.SubRipFile()
-            current_group_idx = 1000  # 当前组的编号起始值
-            current_group_end_time = 1800  # 当前组的结束时间
 
 
+            group_duration = 1800  # 每组时长：30分钟
             for segment in timeline:
-                segment_end = segment.end
-                if segment_end > current_group_end_time:
-                    current_group_idx += 1000  # 假设每组的编号差值为1000
-                    current_group_end_time += current_group_end_time
-                sub_index = current_group_idx + len([s for s in vad_log if s.index >= current_group_idx])
+                group_index = int(segment.end // group_duration)
+                group_base_idx = 1000 + group_index * 1000
+                sub_index = group_base_idx + len(
+                    [s for s in vad_log if group_base_idx <= s.index < group_base_idx + 1000])
+
                 sub = pysrt.SubRipItem(
                     index=sub_index,
                     start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),
@@ -59,7 +58,6 @@ def transcribe(config):
                     text="..."
                 )
                 vad_log.append(sub)
-
 
             vad_log.save(vad_log_path)
             print(f"VAD记录写入: {vad_log_path}")
@@ -163,6 +161,21 @@ def transcribe(config):
                     initial_prompt=basename,
                     language=config['language']
                 )
+
+                '''
+                
+                      audio=audio,
+            beam_size=3,
+            language=config["language"],
+            initial_prompt=basename,
+            condition_on_previous_text=True,
+            repetition_penalty=1.2,
+            no_repeat_ngram_size=3,
+            word_timestamps=False,
+            vad_filter=False,
+                '''
+
+
 
                 for i, seg in enumerate(segments):
                     seg_start = seg.start
