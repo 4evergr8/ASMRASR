@@ -41,9 +41,9 @@ def transcribe(config):
 
 
 
-    for filename in os.listdir(config["pre_path"]):
+    for filename in os.listdir(config["work_path"]):
         if filename.endswith((".wav", ".mp3", ".flac")):
-            audio_path = os.path.join(config["pre_path"], filename)
+            audio_path = os.path.join(config["work_path"], filename)
             basename = os.path.splitext(filename)[0]
             print(f"\n处理音频: {audio_path}")
 
@@ -114,7 +114,6 @@ def transcribe(config):
                     end_sample = int(segment_end * sr)
                     audio_seg = audio[start_sample:end_sample]
 
-                    # 加入静音（除首段）
                     if i > 0:
                         group_audio.append(silence)
                     group_audio.append(audio_seg)
@@ -129,22 +128,7 @@ def transcribe(config):
                     audio_group.audio_array = np.array([])
 
             del audio
-            print(len(audio_groups))
-            subs = pysrt.SubRipFile()
-            for audio_group in audio_groups:
-                for segment in audio_group.segment_info_list:
-                    sub = pysrt.SubRipItem(
-                        index=len(subs) + 1,  # 字幕索引
-                        start=pysrt.SubRipTime.from_ordinal(int(segment.group_start * 1000)),  # 转换 start 为 SRT 时间格式
-                        end=pysrt.SubRipTime.from_ordinal(int(segment.group_end * 1000)),  # 转换 end 为 SRT 时间格式
-                        text=segment.text  # 字幕内容
-                    )
-                    subs.append(sub)
 
-
-            srt_path = os.path.join(config["log_path"], f"before-{basename}.srt")
-            subs.save(srt_path)
-            print(f"log写入: {srt_path}")
 
 
 
@@ -158,8 +142,6 @@ def transcribe(config):
                 num_workers=config["num_workers"]
 
             )
-            subs = pysrt.SubRipFile()
-
             for audio_group in audio_groups:
                 segments, _ = asr_model.transcribe(
                     audio=audio_group.audio_array,
@@ -169,59 +151,42 @@ def transcribe(config):
                     language=config['language']
                 )
 
-
                 for segment_info in audio_group.segment_info_list:
-                    # 遍历每个原有时间段（segment_info），并匹配所有的 ASR 段
                     for seg in segments:
+                        print(segment_info)
                         seg_start = seg.start
                         seg_end = seg.end
-                        seg_text = seg.text.strip()
+                        seg_text = seg.text
+                        print(seg_start,seg_end,segment_info.group_start,segment_info.group_end)
 
-                        subtitle = pysrt.SubRipItem(
-                            index=len(subs) + 1,
-                            start=pysrt.SubRipTime.from_ordinal(int(seg_start * 1000)),  # 转换为毫秒
-                            end=pysrt.SubRipTime.from_ordinal(int(seg_end * 1000)),  # 转换为毫秒
-                            text=seg_text
-                        )
-                        subs.append(subtitle)
-
-                        # 求开始时间的最大值和结束时间的最小值
                         overlap_start = max(seg_start, segment_info.group_start)
                         overlap_end = min(seg_end, segment_info.group_end)
-
-                        # 如果重合时间大于零，计算重合时长
-                        overlap_duration = max(0.0, overlap_end - overlap_start)
-
-                        # 只有当重合时长大于零时，才可能是一个有效的匹配
+                        overlap_duration =  overlap_end-overlap_start
                         if overlap_duration > 0:
-                            segment_info.text = seg_text
-                            break  # 找到匹配就退出当前 ASR 循环，继续匹配下一段 segment_info
+                            match = seg_text
+                            print(segment_info.text)
+                            break
+                    result
 
-            srt_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
-            subs.save(srt_path)
 
 
             del asr_model
             gc.collect()
 
+
+            result = pysrt.SubRipFile()
             for audio_group in audio_groups:
-                subs = pysrt.SubRipFile()
                 for segment in audio_group.segment_info_list:
-                    # 将每个 segment 信息转换为 SRT 格式
                     sub = pysrt.SubRipItem(
-                        index=len(subs) + 1,  # 字幕索引
+                        index=len(result) + 1,
                         start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),  # 转换 start 为 SRT 时间格式
                         end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),  # 转换 end 为 SRT 时间格式
-                        text=segment.text  # 字幕内容
+                        text=segment.text
+
                     )
-                    subs.append(sub)
-
-                # 设置输出 SRT 文件路径
-
+                    result.append(sub)
             srt_path = os.path.join(config["asr_path"], f"{basename}.srt")
-
-
-            subs.save(srt_path)
+            result.save(srt_path)
             print(f"字幕写入: {srt_path}")
 
 
