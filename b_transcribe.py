@@ -163,7 +163,7 @@ def transcribe(config):
             for audio_group in audio_groups:
                 segments, _ = asr_model.transcribe(
                     audio=audio_group.audio_array,
-                    beam_size=2,
+                    beam_size=3,
                     vad_filter=False,
                     initial_prompt=basename,
                     language=config['language']
