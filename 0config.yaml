@@ -5,11 +5,14 @@ asr_path: c_asr #存放转写结果
 tsl_path: d_tsl #存放翻译结果
 model_path: z_model #存放模型
 log_path: z_log #存放记录
+#覆盖配置
+overrite_vad: False
+overrite_asr: False
 #模型配置
 separator: MDX23C-8KFFT-InstVoc_HQ_2.ckpt #人声分离模型
 vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote，“修复了原版模型强制登陆的bug”
 asr: large-v2  # Whisper模型，仅支持ctranslate2格式
-translate: gemini-1.5-flash
+translate: gemini-1.5-flash-002
 #推理配置
 batch_size: 8
 min_duration_on: 0.0 #一段语音至少要持续这么久，才认为是“有效语音段”，优先级高于min_duration_off
