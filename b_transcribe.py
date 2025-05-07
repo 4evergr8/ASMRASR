@@ -158,7 +158,7 @@ def transcribe(config):
                 num_workers=config["num_workers"]
 
             )
-            subs = pysrt.SubRipFile()
+
             for audio_group in audio_groups:
                 segments, _ = asr_model.transcribe(
                     audio=audio_group.audio_array,
@@ -167,31 +167,17 @@ def transcribe(config):
                     initial_prompt=basename,
                     language=config['language']
                 )
-
-                for seg in segments:
-                    seg_start = seg.start
-                    seg_end = seg.end
-                    seg_text = seg.text.strip()
-
+                for segment_info in audio_group.segment_info_list:
                     best_match = None
                     max_overlap = 0.0
+                    for seg in segments:
+                        seg_start = seg.start
+                        seg_end = seg.end
+                        seg_text = seg.text.strip()
 
-                    subtitle = pysrt.SubRipItem(
-                        index=len(subs) + 1,
-                        start=pysrt.SubRipTime.from_ordinal(int(seg_start * 1000)),  # 转换为毫秒
-                        end=pysrt.SubRipTime.from_ordinal(int(seg_end * 1000)),  # 转换为毫秒
-                        text=seg_text
-                    )
-                    subs.append(subtitle)
-
-                    for segment_info in audio_group.segment_info_list:
-                        # 求开始时间的最大值和结束时间的最小值
                         overlap_start = max(seg_start, segment_info.group_start)
                         overlap_end = min(seg_end, segment_info.group_end)
-
-                        # 如果重合时间大于零，计算重合时长
                         overlap_duration = overlap_end - overlap_start
-
                         if overlap_duration >= max_overlap:
                             max_overlap = overlap_duration
                             best_match = segment_info
