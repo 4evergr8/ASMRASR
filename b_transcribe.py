@@ -180,13 +180,14 @@ def transcribe(config):
                         overlap_duration = overlap_end - overlap_start
                         if overlap_duration >= max_overlap:
                             max_overlap = overlap_duration
-                            best_match = segment_info
+                            best_match = seg_text
+
 
                     if best_match and max_overlap > 0:
-                        best_match.text = seg_text
+                        segment_info.text = best_match
 
-            srt_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
-            subs.save(srt_path)
+
+
 
 
             del asr_model
