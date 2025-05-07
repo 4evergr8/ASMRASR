@@ -6,24 +6,11 @@ from pyannote.audio import Model
 from faster_whisper import WhisperModel
 import librosa
 from pyannote.audio.pipelines import VoiceActivityDetection
-from dataclasses import dataclass
 import os
 from getconfig import get_config
 
 
-# 数据结构
-@dataclass
-class AudioSegmentInfo:
-    start: float
-    end: float
-    group_start: float
-    group_end: float
-    text: str = "..."
 
-@dataclass
-class AudioData:
-    audio_array: np.ndarray
-    segment_info_list: list
 
 
 def transcribe(config):
@@ -156,6 +143,7 @@ def transcribe(config):
         print(f"音频分组完成，共 {len(audios)} 组。")
         del audio
 
+
         asr_model = WhisperModel(
             config["asr"],
             device=device,
@@ -196,6 +184,10 @@ def transcribe(config):
         asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
         asr_log.save(asr_log_path)
         print(f"ASR记录写入: {asr_log_path}")
+        
+        
+        
+
 
 
         slice_log_path = os.path.join(config["log_path"], f"slice-{basename}.srt")
@@ -203,6 +195,7 @@ def transcribe(config):
 
         slice_log = pysrt.open(slice_log_path)
         asr_log = pysrt.open(asr_log_path)
+
 
         # 遍历每条 slice_log 中的字幕
         for slice_sub in slice_log:
@@ -231,7 +224,6 @@ def transcribe(config):
                     max_overlap = overlap_duration
                     best_match = asr_sub
 
-            # 如果找到了最重合的字幕，就替换 text
             if best_match is not None:
                 slice_sub.text = best_match.text
 
@@ -240,19 +232,24 @@ def transcribe(config):
         slice_log.save(match_path)
         print(f"match结果写入: {match_path}")
 
-        # 将 slice_log 中的 text 按 index 对应更新到 vad_log
-        for slice_sub in slice_log:
-            idx = slice_sub.index
-            vad_log[idx - 1].text = slice_sub.text
+        vad_log = pysrt.open(vad_log_path)
 
-        # 重置 vad_log 的字幕编号
+        for vad_sub in vad_log:
+            for slice_sub in slice_log:
+                idx = slice_sub.index
+
+                if vad_sub.index == idx:
+                    vad_sub.text = slice_sub.text
+                    break  # 找到对应的字幕后可以停止循环，避免多次匹配
+
         for i, sub in enumerate(vad_log, 1):
             sub.index = i
 
-        # 保存为最终结果
         result_path = os.path.join(config["asr_path"], f"{basename}.srt")
         vad_log.save(result_path)
-        print(f"结果保存为: {result_path}")
+        print(f"结果写入: {result_path}")
+
+
 
 
 
