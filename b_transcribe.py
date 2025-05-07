@@ -42,176 +42,222 @@ def transcribe(config):
 
 
     for filename in os.listdir(config["work_path"]):
-        if filename.endswith((".wav", ".mp3", ".flac")):
-            audio_path = os.path.join(config["work_path"], filename)
-            basename = os.path.splitext(filename)[0]
-            print(f"\n处理音频: {audio_path}")
+        if not filename.endswith((".wav", ".mp3", ".flac")):
+            continue
+        audio_path = os.path.join(config["work_path"], filename)
+        basename = os.path.splitext(filename)[0]
+        print(f"\n处理音频: {audio_path}")
 
-            # Step 1: 加载音频
-            audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
+        torch.cuda.empty_cache()
 
+        vad_model = Model.from_pretrained(checkpoint=config["vad"], cache_dir=config["model_path"])
+        vad_model.to(torch.device(device))
+        vad_pipeline = VoiceActivityDetection(segmentation=vad_model)
+        vad_pipeline.instantiate({
+            "min_duration_on": config["min_duration_on"],
+            "min_duration_off": config["min_duration_off"],
+        })
 
-            gc.collect()
-            torch.cuda.empty_cache()
+        vad_result = vad_pipeline(str(audio_path))
 
-            vad_model = Model.from_pretrained(checkpoint=config["vad"], cache_dir=config["model_path"])
-            vad_model.to(torch.device(device))
-            vad_pipeline = VoiceActivityDetection(segmentation=vad_model)
-            vad_pipeline.instantiate({
-                "min_duration_on": config["min_duration_on"],
-                "min_duration_off": config["min_duration_off"],
-            })
+        del vad_pipeline, vad_model
 
-            vad_result = vad_pipeline(str(audio_path))
+        timeline = vad_result.get_timeline()
 
-
-            del vad_pipeline, vad_model
-            gc.collect()
-
-
-            timeline = vad_result.get_timeline()
-
-            audio_groups = []
-            group_start_limit = 30 * 60  # 每组音频的时间限制，30分钟
-            silence_duration = config["space"]
-            silence = np.zeros(int(sr * silence_duration), dtype=audio.dtype)
-
-            for segment in timeline:
-                segment_start = segment.start
-                segment_end = segment.end
-
-                # 所属分组
-                group_index = int(segment_end // group_start_limit)
-
-                # 创建新分组（如果尚不存在）
-                while len(audio_groups) <= group_index:
-                    audio_groups.append(AudioData(audio_array=np.array([]), segment_info_list=[]))
-
-                # 添加 segment_info 到对应组
-                audio_groups[group_index].segment_info_list.append(
-                    AudioSegmentInfo(start=segment_start, end=segment_end, group_start=0.0, group_end=0.0)
-                )
-
-            # 对每组音频进行拼接处理
-            for audio_group in audio_groups:
-                group_audio = []
-                current_group_end = 0.0
-
-                for i, segment in enumerate(audio_group.segment_info_list):
-                    segment_start = segment.start
-                    segment_end = segment.end
-
-                    # 计算拼接后的位置
-                    group_start = current_group_end
-                    group_end = group_start + (segment_end - segment_start)
-
-                    # 更新 group_start 和 group_end
-                    segment.group_start = group_start
-                    segment.group_end = group_end
-
-                    # 提取音频段
-                    start_sample = int(segment_start * sr)
-                    end_sample = int(segment_end * sr)
-                    audio_seg = audio[start_sample:end_sample]
-
-                    # 加入静音（除首段）
-                    if i > 0:
-                        group_audio.append(silence)
-                    group_audio.append(audio_seg)
-
-                    # 更新下一段的起点
-                    current_group_end = group_end + (
-                        silence_duration if i < len(audio_group.segment_info_list) - 1 else 0)
-
-                if group_audio:
-                    audio_group.audio_array = np.concatenate(group_audio)
-                else:
-                    audio_group.audio_array = np.array([])
-
-            del audio
-            print(len(audio_groups))
-            subs = pysrt.SubRipFile()
-            for audio_group in audio_groups:
-                for segment in audio_group.segment_info_list:
-                    sub = pysrt.SubRipItem(
-                        index=len(subs) + 1,  # 字幕索引
-                        start=pysrt.SubRipTime.from_ordinal(int(segment.group_start * 1000)),  # 转换 start 为 SRT 时间格式
-                        end=pysrt.SubRipTime.from_ordinal(int(segment.group_end * 1000)),  # 转换 end 为 SRT 时间格式
-                        text=segment.text  # 字幕内容
-                    )
-                    subs.append(sub)
+        # 创建日志对象
+        vad_log = pysrt.SubRipFile()
+        current_group_idx = 1000  # 当前组的编号起始值
+        current_group_end_time = 60  # 当前组的结束时间
 
 
-            srt_path = os.path.join(config["log_path"], f"before-{basename}.srt")
-            subs.save(srt_path)
-            print(f"log写入: {srt_path}")
+        for segment in timeline:
+            segment_end = segment.end
+            if segment_end > current_group_end_time:
+                current_group_idx += 1000  # 假设每组的编号差值为1000
+                current_group_end_time += current_group_end_time
+            sub_index = current_group_idx + len([s for s in vad_log if s.index >= current_group_idx])
+            sub = pysrt.SubRipItem(
+                index=sub_index,
+                start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),
+                end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),
+                text="..."
+            )
+            vad_log.append(sub)
+        vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
+        vad_log.save(vad_log_path)
+        print(f"VAD记录写入: {vad_log_path}")
+
+        # 继续从vad_log中读取字幕并进行时间戳调整
+        slice_log = pysrt.SubRipFile()  # 用于存储调整后的字幕
+        silence_duration = config["space"]  # 获取配置中的静音时间
 
 
+        current_group_end = 0.0  # 当前组的结束时间
 
+        for subtitle in vad_log:
+            segment_start = subtitle.start.ordinal / 1000  # 转换为秒
+            segment_end = subtitle.end.ordinal / 1000  # 转换为秒
 
-            gc.collect()
-            asr_model = WhisperModel(
-                config["asr"],
-                device=device,
-                compute_type=compute_type,
-                download_root=config["model_path"],
-                num_workers=config["num_workers"]
+            # 计算当前组的起始和结束时间
+            group_start = current_group_end
+            group_end = group_start + (segment_end - segment_start)  # 保持时间段的长度不变
 
+            # 更新字幕的开始和结束时间戳
+            subtitle.start = pysrt.SubRipTime.from_ordinal(int(group_start * 1000))  # 转换为毫秒并设置新的开始时间
+            subtitle.end = pysrt.SubRipTime.from_ordinal(int(group_end * 1000))  # 设置新的结束时间
+
+            # 更新当前组的结束时间
+            current_group_end = group_end + silence_duration  # 下一组的开始时间是当前组的结束时间+静音间隔
+
+            # 将处理后的字幕项添加到slice_log中
+            slice_log.append(subtitle)
+
+        # 保存处理后的字幕
+        slice_srt_path = os.path.join(config["log_path"], f"slice-{basename}.srt")
+        slice_log.save(slice_srt_path)
+        print(f"slice记录写入: {slice_srt_path}")
+
+        audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
+
+        audios = []  # 每个元素是一个 numpy 音频数组
+        silence_duration = config["space"]  # 静音间隔
+        silence = np.zeros(int(sr * silence_duration), dtype=np.float32)  # 静音段
+
+        group_dict = {}  # 存储各组的音频段，key 是组号（如 1, 2, 3）
+
+        # 处理字幕，根据字幕 index 决定所属组
+        for subtitle in vad_log:
+            segment_start = subtitle.start.ordinal / 1000  # 秒
+            segment_end = subtitle.end.ordinal / 1000  # 秒
+            index = subtitle.index
+            group_id = index // 1000  # 1000~1999 为第 1 组，2000~2999 为第 2 组，以此类推
+
+            start_sample = int(segment_start * sr)
+            end_sample = int(segment_end * sr)
+            audio_seg = audio[start_sample:end_sample]
+
+            if group_id not in group_dict:
+                group_dict[group_id] = []
+            group_dict[group_id].append(audio_seg)
+
+        # 拼接每组音频，并插入静音段
+        for group_id in sorted(group_dict):
+            group_audio = []
+            for i, segment in enumerate(group_dict[group_id]):
+                if i > 0:
+                    group_audio.append(silence)
+                group_audio.append(segment)
+
+            group_array = np.concatenate(group_audio) if group_audio else np.array([], dtype=np.float32)
+            audios.append(group_array)
+
+        print(f"音频分组完成，共 {len(audios)} 组。")
+        del audio
+
+        asr_model = WhisperModel(
+            config["asr"],
+            device=device,
+            compute_type=compute_type,
+            download_root=config["model_path"],
+            num_workers=config["num_workers"]
+
+        )
+
+        asr_log = pysrt.SubRipFile()
+        base_index = 1000  # 初始组编号起点
+
+        for group_idx, audio in enumerate(audios, start=1):
+            start_index = group_idx * base_index
+
+            segments, _ = asr_model.transcribe(
+                audio=audio,
+                beam_size=3,
+                vad_filter=False,
+                initial_prompt=basename,
+                language=config['language']
             )
 
-            for audio_group in audio_groups:
-                segments, _ = asr_model.transcribe(
-                    audio=audio_group.audio_array,
-                    beam_size=3,
-                    vad_filter=False,
-                    initial_prompt=basename,
-                    language=config['language']
+            for i, seg in enumerate(segments):
+                seg_start = seg.start
+                seg_end = seg.end
+                seg_text = seg.text.strip()
+
+                subtitle = pysrt.SubRipItem(
+                    index=start_index + i,
+                    start=pysrt.SubRipTime.from_ordinal(int(seg_start * 1000)),
+                    end=pysrt.SubRipTime.from_ordinal(int(seg_end * 1000)),
+                    text=seg_text
                 )
-                for segment_info in audio_group.segment_info_list:
-                    best_match = None
-                    max_overlap = 0.0
-                    for seg in segments:
-                        seg_start = seg.start
-                        seg_end = seg.end
-                        seg_text = seg.text.strip()
+                asr_log.append(subtitle)
 
-                        overlap_start = max(seg_start, segment_info.group_start)
-                        overlap_end = min(seg_end, segment_info.group_end)
-                        overlap_duration = overlap_end - overlap_start
-                        if overlap_duration >= max_overlap:
-                            max_overlap = overlap_duration
-                            best_match = seg_text
+        # 保存识别结果
+        asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
+        asr_log.save(asr_log_path)
+        print(f"ASR记录写入: {asr_log_path}")
 
 
-                    if best_match and max_overlap > 0:
-                        segment_info.text = best_match
+        slice_log_path = os.path.join(config["log_path"], f"slice-{basename}.srt")
+        asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
+
+        slice_log = pysrt.open(slice_log_path)
+        asr_log = pysrt.open(asr_log_path)
+
+        # 遍历每条 slice_log 中的字幕
+        for slice_sub in slice_log:
+            segment_start = slice_sub.start.ordinal / 1000
+            segment_end = slice_sub.end.ordinal / 1000
+            segment_index = slice_sub.index
+            group_prefix = (segment_index // 1000) * 1000
+
+            max_overlap = 0.0
+            best_match = None
+
+            # 查找当前组中所有 asr_log 字幕（同一千段内）
+            for asr_sub in asr_log:
+                if (asr_sub.index // 1000) * 1000 != group_prefix:
+                    continue
+
+                seg_start = asr_sub.start.ordinal / 1000
+                seg_end = asr_sub.end.ordinal / 1000
+
+                # 重合检测
+                overlap_start = max(seg_start, segment_start)
+                overlap_end = min(seg_end, segment_end)
+                overlap_duration = overlap_end - overlap_start
+
+                if overlap_duration > max_overlap:
+                    max_overlap = overlap_duration
+                    best_match = asr_sub
+
+            # 如果找到了最重合的字幕，就替换 text
+            if best_match is not None:
+                slice_sub.text = best_match.text
+
+        # 保存更新后的 slice_log
+        match_path = os.path.join(config["log_path"], f"match-{basename}.srt")
+        slice_log.save(match_path)
+        print(f"match结果写入: {match_path}")
+
+        # 将 slice_log 中的 text 按 index 对应更新到 vad_log
+        for slice_sub in slice_log:
+            idx = slice_sub.index
+            # 防止越界
+            if idx <= len(vad_log):
+                vad_log[idx - 1].text = slice_sub.text
+
+        # 重置 vad_log 的字幕编号
+        for i, sub in enumerate(vad_log, 1):
+            sub.index = i
+
+        # 保存为最终结果
+        result_path = os.path.join(config["asr_path"], f"{basename}.srt")
+        vad_log.save(result_path)
+        print(f"结果保存为: {result_path}")
 
 
 
 
 
-            del asr_model
-            gc.collect()
-
-            for audio_group in audio_groups:
-                subs = pysrt.SubRipFile()
-                for segment in audio_group.segment_info_list:
-                    # 将每个 segment 信息转换为 SRT 格式
-                    sub = pysrt.SubRipItem(
-                        index=len(subs) + 1,  # 字幕索引
-                        start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),  # 转换 start 为 SRT 时间格式
-                        end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),  # 转换 end 为 SRT 时间格式
-                        text=segment.text  # 字幕内容
-                    )
-                    subs.append(sub)
-
-                # 设置输出 SRT 文件路径
-
-            srt_path = os.path.join(config["asr_path"], f"{basename}.srt")
-
-
-            subs.save(srt_path)
-            print(f"字幕写入: {srt_path}")
 
 
 
