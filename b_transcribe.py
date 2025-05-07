@@ -87,10 +87,8 @@ def transcribe(config):
         vad_log.save(vad_log_path)
         print(f"VAD记录写入: {vad_log_path}")
 
-        # 继续从vad_log中读取字幕并进行时间戳调整
         slice_log = pysrt.SubRipFile()  # 用于存储调整后的字幕
         silence_duration = config["space"]  # 获取配置中的静音时间
-
 
         current_group_end = 0.0  # 当前组的结束时间
 
@@ -98,8 +96,12 @@ def transcribe(config):
             segment_start = subtitle.start.ordinal / 1000  # 转换为秒
             segment_end = subtitle.end.ordinal / 1000  # 转换为秒
 
-            # 计算当前组的起始和结束时间
-            group_start = current_group_end
+            # 如果是该组的第一个段（序号能被1000整除）
+            if subtitle.index % 1000 == 0:
+                group_start = 0.0  # 设置为0，确保每组的第一个段从00:00:00开始
+            else:
+                group_start = current_group_end  # 否则按照上一段的结束时间进行处理
+
             group_end = group_start + (segment_end - segment_start)  # 保持时间段的长度不变
 
             # 更新字幕的开始和结束时间戳
@@ -241,9 +243,7 @@ def transcribe(config):
         # 将 slice_log 中的 text 按 index 对应更新到 vad_log
         for slice_sub in slice_log:
             idx = slice_sub.index
-            # 防止越界
-            if idx <= len(vad_log):
-                vad_log[idx - 1].text = slice_sub.text
+            vad_log[idx - 1].text = slice_sub.text
 
         # 重置 vad_log 的字幕编号
         for i, sub in enumerate(vad_log, 1):
