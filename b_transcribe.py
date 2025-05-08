@@ -55,7 +55,7 @@ def transcribe(config):
                     index=sub_index,
                     start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),
                     end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),
-                    text="..."
+                    text="默认占位"+str(sub_index)
                 )
                 vad_log.append(sub)
 
@@ -101,6 +101,7 @@ def transcribe(config):
 
         asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
         if not os.path.exists(asr_log_path) or config["overwrite_asr"]:
+            vad_log = pysrt.open(vad_log_path)
             audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
 
             audios = []  # 每个元素是一个 numpy 音频数组
