@@ -140,7 +140,7 @@ def transcribe(config):
 
 
             asr_model = WhisperModel(
-                config["asr"],
+                model_size_or_path=config["asr"],
                 device=device,
                 compute_type=compute_type,
                 download_root=config["model_path"],
