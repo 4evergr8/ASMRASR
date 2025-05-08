@@ -22,7 +22,7 @@ def transcribe(config):
         basename = os.path.splitext(filename)[0]
 
         vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
-        if not os.path.exists(vad_log_path) or config["overrite_vad"]:
+        if not os.path.exists(vad_log_path) or config["overwrite_vad"]:
             vad_model = Model.from_pretrained(checkpoint=config["vad"], cache_dir=config["model_path"])
             vad_model.to(torch.device(device))
             vad_pipeline = VoiceActivityDetection(segmentation=vad_model)
@@ -48,7 +48,7 @@ def transcribe(config):
                     index=sub_index,
                     start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),
                     end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),
-                    text="..."
+                    text="默认占位" + str(sub_index)
                 )
                 vad_log.append(sub)
 
@@ -89,7 +89,8 @@ def transcribe(config):
         print(f"slice记录写入: {slice_log_path}")
 
         asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
-        if not os.path.exists(asr_log_path) or config["overrite_asr"]:
+        if not os.path.exists(asr_log_path) or config["overwrite_asr"]:
+            vad_log = pysrt.open(vad_log_path)
             audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
 
             audios = []  # 每个元素是一个 numpy 音频数组
@@ -128,7 +129,7 @@ def transcribe(config):
             del audio
 
             asr_model = WhisperModel(
-                config["asr"],
+                model_size_or_path=config["asr"],
                 device=device,
                 compute_type=compute_type,
                 download_root=config["model_path"],
@@ -144,10 +145,35 @@ def transcribe(config):
 
                 segments, _ = asr_model.transcribe(
                     audio=audio,
-                    beam_size=3,
+                    language=config['language'],
+                    task="transcribe",
+                    log_progress=True,
+                    beam_size=5,
+                    best_of=5,
+                    patience=1,
+                    length_penalty=1,
+                    repetition_penalty=1.1,  # 稍微提高抑制重复的倾向
+                    no_repeat_ngram_size=3,  # 阻止 ngram 重复
+                    temperature=[0.2, 0.4, 0.6, 0.8, 1.0],  # 稍高起步避免死循环
+                    compression_ratio_threshold=2.4,
+                    log_prob_threshold=-1.0,
+                    no_speech_threshold=0.6,
+                    condition_on_previous_text=True,  # 保留上下文
+                    prompt_reset_on_temperature=0.5,
+                    prefix=None,
+                    suppress_blank=True,
+                    suppress_tokens=[-1],
+                    without_timestamps=False,
+                    max_initial_timestamp=1.0,
+                    word_timestamps=True,
+                    hallucination_silence_threshold=1.5,
+                    prepend_punctuations="\"'“¿([{-",
+                    append_punctuations="\"'.。,，!！?？:：”)]}、",
+                    multilingual=False,
                     vad_filter=False,
-                    initial_prompt=basename,
-                    language=config['language']
+                    clip_timestamps="0",
+                    language_detection_threshold=None,
+                    language_detection_segments=1,
                 )
 
                 for i, seg in enumerate(segments):
@@ -163,50 +189,40 @@ def transcribe(config):
                     )
                     asr_log.append(subtitle)
 
-            # 保存识别结果
+                # 保存识别结果
 
-            asr_log.save(asr_log_path)
-            print(f"ASR记录写入: {asr_log_path}")
+                asr_log.save(asr_log_path)
+                print(f"ASR记录写入: {asr_log_path}")
         else:
             asr_log = pysrt.open(asr_log_path)
             print('ASR记录存在，跳过')
 
-        for slice_sub in slice_log:
-            segment_start = slice_sub.start.ordinal / 1000
-            segment_end = slice_sub.end.ordinal / 1000
-            segment_index = slice_sub.index
-            group_prefix = (segment_index // 1000) * 1000
+        for asr_sub in asr_log:
+            seg_start = asr_sub.start.ordinal / 1000
+            seg_end = asr_sub.end.ordinal / 1000
+            group_prefix = (asr_sub.index // 1000) * 1000
 
             max_overlap = 0.0
             best_match = None
 
-            # 查找当前组中所有 asr_log 字幕（同一千段内）
-            for asr_sub in asr_log:
-                seg_start = asr_sub.start.ordinal / 1000
-                seg_end = asr_sub.end.ordinal / 1000
-                group_prefix = (asr_sub.index // 1000) * 1000
+            for slice_sub in slice_log:
+                if (slice_sub.index // 1000) * 1000 != group_prefix:
+                    continue
 
-                max_overlap = 0.0
-                best_match = None
+                segment_start = slice_sub.start.ordinal / 1000
+                segment_end = slice_sub.end.ordinal / 1000
 
-                for slice_sub in slice_log:
-                    if (slice_sub.index // 1000) * 1000 != group_prefix:
-                        continue
+                # 重合检测
+                overlap_start = max(seg_start, segment_start)
+                overlap_end = min(seg_end, segment_end)
+                overlap_duration = overlap_end - overlap_start
 
-                    segment_start = slice_sub.start.ordinal / 1000
-                    segment_end = slice_sub.end.ordinal / 1000
+                if overlap_duration > max_overlap:
+                    max_overlap = overlap_duration
+                    best_match = slice_sub
 
-                    # 重合检测
-                    overlap_start = max(seg_start, segment_start)
-                    overlap_end = min(seg_end, segment_end)
-                    overlap_duration = overlap_end - overlap_start
-
-                    if overlap_duration > max_overlap:
-                        max_overlap = overlap_duration
-                        best_match = slice_sub
-
-                if best_match is not None:
-                    best_match.text = asr_sub.text
+            if best_match is not None:
+                best_match.text = asr_sub.text
 
         # 保存更新后的 slice_log
         match_path = os.path.join(config["log_path"], f"match-{basename}.srt")
