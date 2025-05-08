@@ -6,8 +6,8 @@ tsl_path: d_tsl #存放翻译结果
 model_path: z_model #存放模型
 log_path: z_log #存放记录
 #覆盖配置
-overrite_vad: False
-overrite_asr: False
+overwrite_vad: True
+overwrite_asr: True
 #模型配置
 separator: MDX23C-8KFFT-InstVoc_HQ_2.ckpt #人声分离模型
 vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote，“修复了原版模型强制登陆的bug”
