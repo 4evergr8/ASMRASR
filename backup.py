@@ -162,10 +162,36 @@ def transcribe(config):
             for audio_group in audio_groups:
                 segments, _ = asr_model.transcribe(
                     audio=audio_group.audio_array,
-                    beam_size=3,
+                    language=config['language'],
+
+                    task="transcribe",
+                    log_progress=True,
+                    beam_size=5,
+                    best_of=5,
+                    patience=1,
+                    length_penalty=1,
+                    repetition_penalty=1.1,  # 稍微提高抑制重复的倾向
+                    no_repeat_ngram_size=3,  # 阻止 ngram 重复
+                    temperature=[0.2, 0.4, 0.6, 0.8, 1.0],  # 稍高起步避免死循环
+                    compression_ratio_threshold=2.4,
+                    log_prob_threshold=-1.0,
+                    no_speech_threshold=0.6,
+                    condition_on_previous_text=True,  # 保留上下文
+                    prompt_reset_on_temperature=0.5,
+                    prefix=None,
+                    suppress_blank=True,
+                    suppress_tokens=[-1],
+                    without_timestamps=False,
+                    max_initial_timestamp=1.0,
+                    word_timestamps=True,
+                    hallucination_silence_threshold=1.5,
+                    prepend_punctuations="\"'“¿([{-",
+                    append_punctuations="\"'.。,，!！?？:：”)]}、",
+                    multilingual=False,
                     vad_filter=False,
-                    initial_prompt=basename,
-                    language=config['language']
+                    clip_timestamps="0",
+                    language_detection_threshold=None,
+                    language_detection_segments=1,
                 )
 
                 for seg in segments:
