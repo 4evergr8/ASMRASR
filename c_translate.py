@@ -19,7 +19,8 @@ def translate(config):
         original_subs = pysrt.open(src_path, encoding='utf-8')
 
         # 创建新的 SubRipFile 并重新编号
-        original_subs = pysrt.SubRipFile(items=[sub for sub in original_subs if sub.text != '...'])
+        original_subs = pysrt.SubRipFile(items=[sub for sub in original_subs if "默认占位" not in sub.text])
+
 
         original_subs.clean_indexes()
 
