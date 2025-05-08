@@ -189,18 +189,6 @@ def transcribe(config):
 
 
 
-                '''
-                
-                      audio=audio,
-            beam_size=3,
-            language=config["language"],
-            initial_prompt=basename,
-            condition_on_previous_text=True,
-            repetition_penalty=1.2,
-            no_repeat_ngram_size=3,
-            word_timestamps=False,
-            vad_filter=False,
-                '''
 
 
 
