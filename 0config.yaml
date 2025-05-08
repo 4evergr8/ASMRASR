@@ -16,7 +16,7 @@ translate: gemini-1.5-flash-002
 #推理配置
 batch_size: 8
 min_duration_on: 0.0 #一段语音至少要持续这么久，才认为是“有效语音段”，优先级高于min_duration_off
-min_duration_off: 0.0 #两段语音之间的静音至少要持续这么久，才认为是“真正的停顿”
+min_duration_off: 0.2 #两段语音之间的静音至少要持续这么久，才认为是“真正的停顿”
 space: 2 #人声段切割后空白间隔，单位为秒
 language: ja
 num_workers: 1
