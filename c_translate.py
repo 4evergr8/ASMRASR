@@ -2,8 +2,6 @@ import os
 import time
 import pysrt
 from google import genai
-from google.genai.types import SafetySetting, HarmCategory, HarmBlockThreshold
-
 from getconfig import get_config
 from google.genai import types
 
