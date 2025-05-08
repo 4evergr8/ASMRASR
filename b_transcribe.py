@@ -24,10 +24,11 @@ def transcribe(config):
         audio_path = os.path.join(config["work_path"], filename)
         print(f"\n处理音频: {audio_path}")
         basename = os.path.splitext(filename)[0]
+        print(config["overwrite_asr"])
 
 
         vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
-        if not os.path.exists(vad_log_path) or config["overrite_vad"]:
+        if not os.path.exists(vad_log_path) or config["overwrite_vad"]:
             vad_model = Model.from_pretrained(checkpoint=config["vad"], cache_dir=config["model_path"])
             vad_model.to(torch.device(device))
             vad_pipeline = VoiceActivityDetection(segmentation=vad_model)
@@ -100,7 +101,7 @@ def transcribe(config):
 
 
         asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
-        if not os.path.exists(asr_log_path) or config["overrite_asr"]:
+        if not os.path.exists(asr_log_path) or config["overwrite_asr"]:
             audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
 
             audios = []  # 每个元素是一个 numpy 音频数组
