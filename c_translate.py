@@ -44,7 +44,7 @@ def translate(config):
             chat = client.chats.create(
                 model=config['translate'],
                 config=types.GenerateContentConfig(
-                    system_instruction=config["prompt"].format(basename=basename) + "\n" + "\n".join(
+                    system_instruction=config["prompt"] + "\n" + "\n".join(
                         sub.text for sub in chunk),
                 )
             )
