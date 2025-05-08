@@ -24,7 +24,6 @@ def transcribe(config):
         audio_path = os.path.join(config["work_path"], filename)
         print(f"\n处理音频: {audio_path}")
         basename = os.path.splitext(filename)[0]
-        print(config["overwrite_asr"])
 
 
         vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
