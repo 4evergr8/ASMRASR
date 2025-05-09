@@ -6,3 +6,5 @@
 *.srt
 /a_pre
 /b_work
+/dist
+/build
