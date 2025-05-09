@@ -9,14 +9,10 @@ import os
 from getconfig import get_config
 
 
-
-
-
 def transcribe(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     compute_type = "float16" if device == "cuda" else "int8"
     print('设备:', device, '类型:', compute_type)
-
 
     for filename in os.listdir(config["work_path"]):
         if not filename.endswith((".wav", ".mp3", ".flac")):
@@ -24,7 +20,6 @@ def transcribe(config):
         audio_path = os.path.join(config["work_path"], filename)
         print(f"\n处理音频: {audio_path}")
         basename = os.path.splitext(filename)[0]
-
 
         vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
         if not os.path.exists(vad_log_path) or config["overwrite_vad"]:
@@ -36,13 +31,11 @@ def transcribe(config):
                 "min_duration_off": config["min_duration_off"],
             })
 
-
             vad_result = vad_pipeline(str(audio_path))
             del vad_pipeline, vad_model
 
             timeline = vad_result.get_timeline()
             vad_log = pysrt.SubRipFile()
-
 
             group_duration = 1800  # 每组时长：30分钟
             for segment in timeline:
@@ -55,7 +48,7 @@ def transcribe(config):
                     index=sub_index,
                     start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),
                     end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),
-                    text="默认占位"+str(sub_index)
+                    text="默认占位" + str(sub_index)
                 )
                 vad_log.append(sub)
 
@@ -64,8 +57,6 @@ def transcribe(config):
         else:
             vad_log = pysrt.open(vad_log_path)
             print('VAD记录存在，跳过')
-
-
 
         slice_log = pysrt.SubRipFile()  # 用于存储调整后的字幕
         silence_duration = config["space"]  # 获取配置中的静音时间
@@ -97,66 +88,62 @@ def transcribe(config):
         slice_log.save(slice_log_path)
         print(f"slice记录写入: {slice_log_path}")
 
-
-
         asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
         if not os.path.exists(asr_log_path) or config["overwrite_asr"]:
-            vad_log = pysrt.open(vad_log_path)
-            audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
 
-            audios = []  # 每个元素是一个 numpy 音频数组
-            silence_duration = config["space"]  # 静音间隔
-            silence = np.zeros(int(sr * silence_duration), dtype=np.float32)  # 静音段
-
-            group_dict = {}  # 存储各组的音频段，key 是组号（如 1, 2, 3）
-
-            # 处理字幕，根据字幕 index 决定所属组
-            for subtitle in vad_log:
-                segment_start = subtitle.start.ordinal / 1000  # 秒
-                segment_end = subtitle.end.ordinal / 1000  # 秒
-                index = subtitle.index
-                group_id = index // 1000  # 1000~1999 为第 1 组，2000~2999 为第 2 组，以此类推
-
-                start_sample = int(segment_start * sr)
-                end_sample = int(segment_end * sr)
-                audio_seg = audio[start_sample:end_sample]
-
-                if group_id not in group_dict:
-                    group_dict[group_id] = []
-                group_dict[group_id].append(audio_seg)
-
-            # 拼接每组音频，并插入静音段
-            for group_id in sorted(group_dict):
-                group_audio = []
-                for i, segment in enumerate(group_dict[group_id]):
-                    if i > 0:
-                        group_audio.append(silence)
-                    group_audio.append(segment)
-
-                group_array = np.concatenate(group_audio) if group_audio else np.array([], dtype=np.float32)
-                audios.append(group_array)
-
-            print(f"音频分组完成，共 {len(audios)} 组。")
-            del audio
-
-
+            # 加载模型
             asr_model = WhisperModel(
                 model_size_or_path=config["asr"],
                 device=device,
                 compute_type=compute_type,
                 download_root=config["model_path"],
                 num_workers=config["num_workers"]
-
             )
 
+            # 初始化 ASR 记录
             asr_log = pysrt.SubRipFile()
             base_index = 1000  # 初始组编号起点
 
-            for group_idx, audio in enumerate(audios, start=1):
-                start_index = group_idx * base_index
+            # 加载字幕文件并分组
+            vad_log = pysrt.open(vad_log_path)
+            group_dict = {}
 
+            for subtitle in vad_log:
+                segment_start = subtitle.start.ordinal / 1000  # 秒
+                segment_end = subtitle.end.ordinal / 1000  # 秒
+                index = subtitle.index
+                group_id = index // 1000  # 1000~1999 为第 1 组，2000~2999 为第 2 组，以此类推
+
+                if group_id not in group_dict:
+                    group_dict[group_id] = []
+                group_dict[group_id].append((segment_start, segment_end))
+
+            # 对每一组进行处理
+            for group_id, segments in group_dict.items():
+                # 加载音频
+                audio, sr = librosa.load(str(audio_path), sr=16000, mono=True)
+
+                # 创建静音段
+                silence_duration = config["space"]
+                silence = np.zeros(int(sr * silence_duration), dtype=np.float32)
+
+                # 切分并拼接该组的音频
+                group_audio = []
+                for i, (start, end) in enumerate(segments):
+                    start_sample = int(start * sr)
+                    end_sample = int(end * sr)
+                    audio_seg = audio[start_sample:end_sample]
+
+                    if i > 0:
+                        group_audio.append(silence)  # 插入静音间隔
+                    group_audio.append(audio_seg)
+
+                group_array = np.concatenate(group_audio) if group_audio else np.array([], dtype=np.float32)
+                del audio  # 删除音频，释放内存
+
+                # 送入模型进行识别
                 segments, _ = asr_model.transcribe(
-                    audio=audio,
+                    audio=group_array,
                     language=config['language'],
                     task="transcribe",
                     log_progress=True,
@@ -164,13 +151,13 @@ def transcribe(config):
                     best_of=5,
                     patience=1,
                     length_penalty=1,
-                    repetition_penalty=1.1,  # 稍微提高抑制重复的倾向
-                    no_repeat_ngram_size=3,  # 阻止 ngram 重复
-                    temperature=[0.2, 0.4, 0.6, 0.8, 1.0],  # 稍高起步避免死循环
+                    repetition_penalty=1.1,
+                    no_repeat_ngram_size=3,
+                    temperature=[0.2, 0.4, 0.6, 0.8, 1.0],
                     compression_ratio_threshold=2.4,
                     log_prob_threshold=-1.0,
                     no_speech_threshold=0.6,
-                    condition_on_previous_text=True,  # 保留上下文
+                    condition_on_previous_text=True,
                     prompt_reset_on_temperature=0.5,
                     prefix=None,
                     suppress_blank=True,
@@ -188,37 +175,31 @@ def transcribe(config):
                     language_detection_segments=1,
                 )
 
-
-
-
-
-
+                # 添加识别结果到 ASR 记录并写入文件
                 for i, seg in enumerate(segments):
                     seg_start = seg.start
                     seg_end = seg.end
                     seg_text = seg.text.strip()
 
                     subtitle = pysrt.SubRipItem(
-                        index=start_index + i,
+                        index=base_index + i,
                         start=pysrt.SubRipTime.from_ordinal(int(seg_start * 1000)),
                         end=pysrt.SubRipTime.from_ordinal(int(seg_end * 1000)),
                         text=seg_text
                     )
                     asr_log.append(subtitle)
 
-            # 保存识别结果
-
                 asr_log.save(asr_log_path)
-                print(f"ASR记录写入: {asr_log_path}")
+                print(f"组 {group_id} 的识别结果已写入: {asr_log_path}")
+
+            # 删除模型
+            del asr_model
+            print("模型已删除")
+
+
         else:
             asr_log = pysrt.open(asr_log_path)
             print('ASR记录存在，跳过')
-
-        
-        
-
-
-
 
         for slice_sub in slice_log:
             segment_start = slice_sub.start.ordinal / 1000
@@ -270,15 +251,6 @@ def transcribe(config):
         result_path = os.path.join(config["asr_path"], f"{basename}.srt")
         vad_log.save(result_path)
         print(f"结果写入: {result_path}")
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
