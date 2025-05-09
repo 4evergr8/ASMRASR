@@ -133,7 +133,6 @@ def transcribe(config):
                 device=device,
                 compute_type=compute_type,
                 download_root=config["model_path"],
-                num_workers=config["num_workers"]
 
             )
 
@@ -174,6 +173,7 @@ def transcribe(config):
                     clip_timestamps="0",
                     language_detection_threshold=None,
                     language_detection_segments=1,
+                    hotwords='イッたんだよ やだ まって…やばい… 恥ずかしい あっ ああ んんっ あぅ はっ やっ はぁ はっはっ はうっ ふぅ くぅ'
                 )
 
                 for i, seg in enumerate(segments):
