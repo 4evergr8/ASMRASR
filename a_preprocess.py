@@ -30,7 +30,9 @@ def preprocess(config):
                     audio_output_path  # 输出路径
                 ]
 
-                subprocess.run(command)
+                subprocess.run(command, check=True)
+
+
 
                 print(f"已提取音频并保存至：{audio_output_path}")
 
@@ -59,7 +61,9 @@ def preprocess(config):
                     "-c", "copy",  # 保持原始编码（无损切割）
                     os.path.join(slice_path, "%03d.wav")  # 输出文件的命名格式
                 ]
-                subprocess.run(command)
+                subprocess.run(command, check=True)
+
+
 
 
 
@@ -94,7 +98,6 @@ def preprocess(config):
                         full_path = os.path.join(split_path, f_name)
                         f.write(f"file '{full_path}'\n")
 
-                basename = os.path.splitext(filename)[0]
                 output_path = os.path.join(config["work_path"], f"{basename}.wav")
                 command = [
                     ffmpeg,
@@ -104,7 +107,9 @@ def preprocess(config):
                     "-c", "copy",
                     output_path
                 ]
-                subprocess.run(command)
+                subprocess.run(command, check=True)
+
+
 
 
 
