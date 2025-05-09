@@ -173,7 +173,7 @@ def transcribe(config):
                     clip_timestamps="0",
                     language_detection_threshold=None,
                     language_detection_segments=1,
-                    hotwords='イッたんだよ やだ まって…やばい… 恥ずかしい あっ ああ んんっ あぅ はっ やっ はぁ はっはっ はうっ ふぅ くぅ'
+                    hotwords='イッたんだよ やだ まって…やばい… 恥ずかしい'
                 )
 
                 for i, seg in enumerate(segments):
