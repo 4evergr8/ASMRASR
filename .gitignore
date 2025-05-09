@@ -1,12 +1,6 @@
 /.idea
 /__pycache__
-/model/xet
-/model/hub
 /z_model
-*.srt
 /a_pre
 /b_work
-/dist
-/build
-*.spec
-*.exe
+*.srt
