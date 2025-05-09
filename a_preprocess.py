@@ -70,8 +70,6 @@ def preprocess(config):
                     output_dir=split_path,
                     output_single_stem="vocals",
                     sample_rate=16000,
-                    mdxc_params={"segment_size": 256, "override_model_segment_size": False, "batch_size": config["batch_size"],
-                                 "overlap": 8, "pitch_shift": 0}
                 )
                 separator.load_model(model_filename=config["separator"])
                 for filename in os.listdir(slice_path):
@@ -88,16 +86,16 @@ def preprocess(config):
 
 
                 file_list = sorted(
-                    [f for f in os.listdir(os.path.join(config["pre_path"], 'split')) if f.endswith(".wav")],
+                    [f for f in os.listdir(split_path) if f.endswith(".wav")],
                     key=lambda x: int(x[:3])
                 )
                 with open(os.path.join(config["pre_path"], f"{basename}_list.txt"), "w", encoding="utf-8") as f:
                     for f_name in file_list:
-                        full_path = os.path.join(config["pre_path"], 'split', f_name)
+                        full_path = os.path.join(split_path, f_name)
                         f.write(f"file '{full_path}'\n")
 
                 basename = os.path.splitext(filename)[0]
-                output_path = os.path.join(config["work_path"], f"merge-{basename}.wav")
+                output_path = os.path.join(config["work_path"], f"{basename}.wav")
                 command = [
                     ffmpeg,
                     "-f", "concat",
@@ -110,31 +108,6 @@ def preprocess(config):
 
 
 
-
-
-
-
-
-    for filename in os.listdir(config["work_path"]):
-        if filename.endswith(".wav") and filename.startswith("merge-"):
-            audio_path = os.path.join(config["work_path"], filename)
-            basename = os.path.splitext(filename)[0]
-            basename = basename.replace('merge-', "")
-            output_path = os.path.join(config["work_path"], f"{basename}.wav")
-            cmd = [
-                ffmpeg,
-                "-i", audio_path,  # 输入音频文件
-                "-af", "volume=1.5",  # 音量增强的设置
-                output_path  # 输出增强后的音频文件
-            ]
-
-
-
-
-            print("正在分析音频响度并输出为 JSON...")
-
-            # 执行 ffmpeg 命令，将响度分析结果保存为 JSON 文件
-            subprocess.run(cmd)
 
 
 
