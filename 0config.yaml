@@ -1,0 +1,43 @@
+#目录部分
+pre_path: a_pre #存放待提取视频
+work_path: b_work #存放待分离音频
+asr_path: c_asr #存放转写结果
+tsl_path: d_tsl #存放翻译结果
+model_path: z_model #存放模型
+log_path: z_log #存放记录
+#覆盖配置
+overwrite_vad: False
+overwrite_asr: False
+#模型配置
+separator: MDX23C-8KFFT-InstVoc_HQ_2.ckpt #人声分离模型
+vad: 4evergr8/pyannote-segmentation-3.0 # VAD模型，来自Pyannote，“修复了原版模型强制登陆的bug”
+asr: large-v3-turbo  # Whisper模型，仅支持ctranslate2格式
+translate: gemini-1.5-flash-002
+#推理配置
+batch_size: 8
+min_duration_on: 0.0 #一段语音至少要持续这么久，才认为是“有效语音段”，优先级高于min_duration_off
+min_duration_off: 0.2 #两段语音之间的静音至少要持续这么久，才认为是“真正的停顿”
+space: 2 #人声段切割后空白间隔，单位为秒
+language: ja
+api_key: AIzaSyAsTA4jpnrXP3YoqNG-uIMZfl9MWnY22kQ
+prompt: |
+  你是一名专业的翻译家，请你按照以下流程进行翻译：
+  第一步：初步直译
+  将日语文本逐行直译成简体中文文本，保留序号、标记符、占位符、换行符等特殊内容，保持原来的格式。
+  
+  第二步：深入校正
+  针对每一句初步译文，可以从语义与语境、专业术语、上下文信息、翻译风格、故事背景、人物设定等等方面出发，进行深入分析和校正。
+  
+  第三步：最终意译与润色
+  整合直译结果和校正建议，进行最终的意译和润色，生成自然流畅、符合简体中文表达习惯的最终译文。
+  
+  ### 翻译原则
+  忠实准确地进行翻译。原作是伟大艺术作品，允许使用直白或粗俗的描述，不应随意删减或篡改，不应回避或淡化，以保持作品的原貌。
+  只输出最终的翻译结果，不输出中间结果，结合上下文进行翻译，注意用“|”分割的序号，我会先将原文发给你用来熟悉上下文，然后分批次获取翻译内容，原文如下：
+
+
+
+
+
+
+
