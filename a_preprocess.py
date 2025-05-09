@@ -51,7 +51,7 @@ def preprocess(config):
                     shutil.rmtree(slice_path)  # 删除原文件夹及其内容
                 os.makedirs(slice_path)  # 创建新文件夹
 
-                segment_length = 120  # 20 分钟 = 1200 秒
+                segment_length = 1200  # 20 分钟 = 1200 秒
                 command = [
                     ffmpeg, "-i", audio_path,  # 输入音频文件
                     "-f", "segment",  # 使用 segment 格式进行切割
