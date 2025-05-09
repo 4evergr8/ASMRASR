@@ -1,11 +1,14 @@
 import os
+import sys
+
 import yaml
 
 
-path: str = os.path.dirname(os.path.abspath(__file__))
+
 
 
 def get_config():
+    path: str = os.path.dirname(sys.argv[0])
     with open(os.path.join(path, '0config.yaml'), 'r', encoding='utf-8') as file:
         config = yaml.safe_load(file)
 
