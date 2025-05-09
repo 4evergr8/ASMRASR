@@ -8,3 +8,4 @@
 /b_work
 /dist
 /build
+*.spec
