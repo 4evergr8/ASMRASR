@@ -51,7 +51,7 @@ def translate(config):
 
             for j in range(0, len(chunk), 10):
                 sub_chunk = chunk[j:j + 10]
-                prompt = "要翻译的部分\n".join(f"{k + 1}|{sub.text}" for k, sub in enumerate(sub_chunk))
+                prompt = "要翻译的部分\n"+"\n".join(f"{k + 1}|{sub.text}" for k, sub in enumerate(sub_chunk))
 
                 while True:
                     try:
@@ -68,10 +68,15 @@ def translate(config):
 
                             # 提示翻译成功
                             print(f"翻译成功: {len(translated_subs)} 行已翻译.")
-                            time.sleep(5)  # 成功后稍微等待
+                            srt_path = os.path.join(config['tsl_path'], filename)
+                            translated_subs.save(srt_path, encoding='utf-8')
+                            print(f"字幕已保存到: {srt_path}")
+                            time.sleep(3)  # 成功后稍微等待
                             break
                         else:
                             print("返回行数与原始字幕不一致，等待重试...")
+                            print(f"发送：{prompt}")
+                            print(f"接收：{response}")
                             time.sleep(5)
 
                     except Exception as e:
