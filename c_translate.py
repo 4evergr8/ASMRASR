@@ -10,7 +10,6 @@ def translate(config):
     for filename in os.listdir(config["asr_path"]):
         if not filename.endswith(".srt"):
             continue
-        basename = os.path.splitext(filename)[0]
         src_path = os.path.join(config["asr_path"], filename)
         dst_path = os.path.join(config["tsl_path"], filename)
 
@@ -19,9 +18,19 @@ def translate(config):
         # 创建新的 SubRipFile 并重新编号
         original_subs = pysrt.SubRipFile(items=[sub for sub in original_subs if "默认占位" not in sub.text])
 
+        # 合并相邻且文本相同的字幕
+        merged_subs = pysrt.SubRipFile()
+        i = 0
+        while i < len(original_subs):
+            current = original_subs[i]
+            while i + 1 < len(original_subs) and original_subs[i + 1].text == current.text:
+                current.end = original_subs[i + 1].end  # 延长结束时间
+                i += 1
+            merged_subs.append(current)
+            i += 1
 
+        original_subs = merged_subs
         original_subs.clean_indexes()
-
 
         try:
             translated_subs = pysrt.open(dst_path, encoding='utf-8')
