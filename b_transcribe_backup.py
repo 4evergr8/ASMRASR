@@ -12,7 +12,7 @@ from getconfig import get_config
 
 
 
-def transcribe(config):
+def vad(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     compute_type = "float16" if device == "cuda" else "int8"
     print('设备:', device, '类型:', compute_type)
@@ -62,9 +62,17 @@ def transcribe(config):
             vad_log.save(vad_log_path)
             print(f"VAD记录写入: {vad_log_path}")
         else:
-            vad_log = pysrt.open(vad_log_path)
             print('VAD记录存在，跳过')
 
+def slice(config):
+    for filename in os.listdir(config["work_path"]):
+        if not filename.endswith((".wav", ".mp3", ".flac")):
+            continue
+        audio_path = os.path.join(config["work_path"], filename)
+        print(f"\n处理音频: {audio_path}")
+        basename = os.path.splitext(filename)[0]
+        vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
+        vad_log = pysrt.open(vad_log_path)
 
 
         slice_log = pysrt.SubRipFile()  # 用于存储调整后的字幕
@@ -96,6 +104,19 @@ def transcribe(config):
         slice_log_path = os.path.join(config["log_path"], f"slice-{basename}.srt")
         slice_log.save(slice_log_path)
         print(f"slice记录写入: {slice_log_path}")
+
+def asr(config):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    compute_type = "float16" if device == "cuda" else "int8"
+    print('设备:', device, '类型:', compute_type)
+
+    for filename in os.listdir(config["work_path"]):
+        if not filename.endswith((".wav", ".mp3", ".flac")):
+            continue
+        audio_path = os.path.join(config["work_path"], filename)
+        print(f"\n处理音频: {audio_path}")
+        basename = os.path.splitext(filename)[0]
+        vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
 
 
 
@@ -145,7 +166,6 @@ def transcribe(config):
                 device=device,
                 compute_type=compute_type,
                 download_root=config["model_path"],
-                num_workers=config["num_workers"]
 
             )
 
@@ -186,6 +206,7 @@ def transcribe(config):
                     clip_timestamps="0",
                     language_detection_threshold=None,
                     language_detection_segments=1,
+                    hotwords='イッたんだよ やだ まって…やばい… 恥ずかしい あっ ああ んんっ あぅ はっ やっ はぁ はっはっ はうっ ふぅ くぅ'
                 )
 
 
@@ -214,8 +235,20 @@ def transcribe(config):
             asr_log = pysrt.open(asr_log_path)
             print('ASR记录存在，跳过')
 
-        
-        
+def match(config):
+    for filename in os.listdir(config["work_path"]):
+        if not filename.endswith((".wav", ".mp3", ".flac")):
+            continue
+        audio_path = os.path.join(config["work_path"], filename)
+        print(f"\n处理音频: {audio_path}")
+        basename = os.path.splitext(filename)[0]
+        vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
+        vad_log = pysrt.open(vad_log_path)
+        slice_log_path = os.path.join(config["log_path"], f"slice-{basename}.srt")
+        slice_log = pysrt.open(slice_log_path)
+        asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
+        asr_log = pysrt.open(asr_log_path)
+
 
 
 
@@ -254,7 +287,7 @@ def transcribe(config):
         slice_log.save(match_path)
         print(f"match结果写入: {match_path}")
 
-        vad_log = pysrt.open(vad_log_path)
+
 
         for vad_sub in vad_log:
             for slice_sub in slice_log:
@@ -269,8 +302,7 @@ def transcribe(config):
 
         result_path = os.path.join(config["asr_path"], f"{basename}.srt")
         vad_log.save(result_path)
-        print(f"结果写入: {result_path}")
-
+        print(f"最终结果写入: {result_path}")
 
 
 
@@ -282,4 +314,9 @@ def transcribe(config):
 
 
 if __name__ == "__main__":
-    transcribe(get_config())
+    config = get_config()
+    vad(config)
+    slice(config)
+    asr(config)
+    match(config)
+
