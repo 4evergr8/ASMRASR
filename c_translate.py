@@ -44,19 +44,21 @@ def translate(config):
 
         # 计算剩余未翻译的部分
         original_subs = original_subs[len(translated_subs):]
+        before = ''
 
         # 翻译剩余部分
-        for i in range(0, len(original_subs), 200):
-            chunk = original_subs[i:i + 200]
+        for i in range(0, len(original_subs), 100):
+            chunk = original_subs[i:i + 100]
+            content = "\n".join(sub.text for sub in chunk)
 
             client = genai.Client(api_key=config["api_key"])
             chat = client.chats.create(
                 model=config['translate'],
                 config=types.GenerateContentConfig(
-                    system_instruction=config["prompt"] + "\n" + "\n".join(
-                        sub.text for sub in chunk),
+                    system_instruction=config["prompt"] + "\n"+before+"\n" + content,
                 )
             )
+            before = content
 
             for j in range(0, len(chunk), 10):
                 sub_chunk = chunk[j:j + 10]
