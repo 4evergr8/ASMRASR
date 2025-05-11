@@ -1,3 +1,8 @@
+import time
+
+import soundfile
+
+from getconfig import get_config
 import pysrt
 import torch
 import numpy as np
@@ -6,13 +11,12 @@ from faster_whisper import WhisperModel
 import librosa
 from pyannote.audio.pipelines import VoiceActivityDetection
 import os
-from getconfig import get_config
 
-
-def transcribe(config):
+def vad(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     compute_type = "float16" if device == "cuda" else "int8"
     print('设备:', device, '类型:', compute_type)
+
 
     for filename in os.listdir(config["work_path"]):
         if not filename.endswith((".wav", ".mp3", ".flac")):
@@ -20,6 +24,7 @@ def transcribe(config):
         audio_path = os.path.join(config["work_path"], filename)
         print(f"\n处理音频: {audio_path}")
         basename = os.path.splitext(filename)[0]
+
 
         vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
         if not os.path.exists(vad_log_path) or config["overwrite_vad"]:
@@ -31,14 +36,18 @@ def transcribe(config):
                 "min_duration_off": config["min_duration_off"],
             })
 
+
             vad_result = vad_pipeline(str(audio_path))
             del vad_pipeline, vad_model
 
             timeline = vad_result.get_timeline()
             vad_log = pysrt.SubRipFile()
 
+
             group_duration = 1800  # 每组时长：30分钟
             for segment in timeline:
+                if segment.end - segment.start < config["filter"]:
+                    continue  # 跳过持续时间小于 0.8 秒的段
                 group_index = int(segment.end // group_duration)
                 group_base_idx = 1000 + group_index * 1000
                 sub_index = group_base_idx + len(
@@ -48,15 +57,25 @@ def transcribe(config):
                     index=sub_index,
                     start=pysrt.SubRipTime.from_ordinal(int(segment.start * 1000)),
                     end=pysrt.SubRipTime.from_ordinal(int(segment.end * 1000)),
-                    text="默认占位" + str(sub_index)
+                    text="默认占位"+str(sub_index)
                 )
                 vad_log.append(sub)
 
             vad_log.save(vad_log_path)
             print(f"VAD记录写入: {vad_log_path}")
         else:
-            vad_log = pysrt.open(vad_log_path)
             print('VAD记录存在，跳过')
+
+def slice(config):
+    for filename in os.listdir(config["work_path"]):
+        if not filename.endswith((".wav", ".mp3", ".flac")):
+            continue
+        audio_path = os.path.join(config["work_path"], filename)
+        print(f"\n处理音频: {audio_path}")
+        basename = os.path.splitext(filename)[0]
+        vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
+        vad_log = pysrt.open(vad_log_path)
+
 
         slice_log = pysrt.SubRipFile()  # 用于存储调整后的字幕
         silence_duration = config["space"]  # 获取配置中的静音时间
@@ -87,6 +106,21 @@ def transcribe(config):
         slice_log_path = os.path.join(config["log_path"], f"slice-{basename}.srt")
         slice_log.save(slice_log_path)
         print(f"slice记录写入: {slice_log_path}")
+
+def asr(config):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    compute_type = "float16" if device == "cuda" else "int8"
+    print('设备:', device, '类型:', compute_type)
+
+    for filename in os.listdir(config["work_path"]):
+        if not filename.endswith((".wav", ".mp3", ".flac")):
+            continue
+        audio_path = os.path.join(config["work_path"], filename)
+        print(f"\n处理音频: {audio_path}")
+        basename = os.path.splitext(filename)[0]
+        vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
+
+
 
         asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
         if not os.path.exists(asr_log_path) or config["overwrite_asr"]:
@@ -173,7 +207,7 @@ def transcribe(config):
                     clip_timestamps="0",
                     language_detection_threshold=None,
                     language_detection_segments=1,
-                    hotwords='イッたんだよ やだ まって…やばい… 恥ずかしい'
+                    hotwords='イッたんだよ やだ まって やばい  恥ずかしい'
                 )
 
                 for i, seg in enumerate(segments):
@@ -194,8 +228,25 @@ def transcribe(config):
                 asr_log.save(asr_log_path)
                 print(f"ASR记录写入: {asr_log_path}")
         else:
-            asr_log = pysrt.open(asr_log_path)
             print('ASR记录存在，跳过')
+
+def match(config):
+    for filename in os.listdir(config["work_path"]):
+        if not filename.endswith((".wav", ".mp3", ".flac")):
+            continue
+        audio_path = os.path.join(config["work_path"], filename)
+        print(f"\n处理音频: {audio_path}")
+        basename = os.path.splitext(filename)[0]
+        vad_log_path = os.path.join(config["log_path"], f"vad-{basename}.srt")
+        vad_log = pysrt.open(vad_log_path)
+        slice_log_path = os.path.join(config["log_path"], f"slice-{basename}.srt")
+        slice_log = pysrt.open(slice_log_path)
+        asr_log_path = os.path.join(config["log_path"], f"asr-{basename}.srt")
+        asr_log = pysrt.open(asr_log_path)
+
+
+
+
 
         for slice_sub in slice_log:
             segment_start = slice_sub.start.ordinal / 1000
@@ -231,7 +282,7 @@ def transcribe(config):
         slice_log.save(match_path)
         print(f"match结果写入: {match_path}")
 
-        vad_log = pysrt.open(vad_log_path)
+
 
         for vad_sub in vad_log:
             for slice_sub in slice_log:
@@ -246,8 +297,22 @@ def transcribe(config):
 
         result_path = os.path.join(config["asr_path"], f"{basename}.srt")
         vad_log.save(result_path)
-        print(f"结果写入: {result_path}")
+        print(f"最终结果写入: {result_path}")
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
-    transcribe(get_config())
+    config = get_config()
+    vad(config)
+    slice(config)
+    asr(config)
+    match(config)
+
+
