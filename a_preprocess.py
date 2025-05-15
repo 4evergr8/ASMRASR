@@ -1,6 +1,9 @@
 import os
 import shutil
 import subprocess
+
+import torch
+
 from getconfig import get_config
 from imageio_ffmpeg import get_ffmpeg_exe
 from audio_separator.separator import Separator
@@ -37,6 +40,8 @@ def preprocess(config):
                 print(f"已提取音频并保存至：{audio_output_path}")
 
 
+    if not torch.cuda.is_available():
+        exit(0)
 
 
 
