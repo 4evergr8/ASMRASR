@@ -50,6 +50,15 @@
 * 在3asr文件夹中获取识别结果
 
 
+### 独显运行（NVIDIA GPU 加速，推荐）
+*   **要求**：拥有 NVIDIA 显卡并安装了显卡驱动。
+*   **安装步骤**：
+    1.  按照上述“本地运行”步骤初始化虚拟环境。
+    2.  运行项目根目录下的 `install_gpu.bat`。
+    3.  在弹出菜单中选择与你驱动相匹配的 CUDA 版本（即使你的驱动显示为 13.x，也可以选择 12.1 或 12.4，它们通常向后兼容）。
+    4.  安装完成后，再次运行 `运行.bat` 即可享受硬件加速。
+*   **优势**：处理速度可提升 5-10 倍，并支持更高精度的模型推理。
+
 ### 云端运行（不稳定，调试中）
 * 点击<a href="https://colab.research.google.com/github/4evergr8/ASMRASR/blob/main/笔记本.ipynb" target="_blank">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" width="80">

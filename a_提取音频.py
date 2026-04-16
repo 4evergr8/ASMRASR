@@ -6,11 +6,11 @@ from pathlib import Path
 import subprocess
 from settings import config
 
-subprocess.run(
-    [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
-    input="y\n",
-    text=True
-)
+# subprocess.run(
+#     [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
+#     input="y\n",
+#     text=True
+# )
 ffmpeg_downloader.add_path()
 extensions = ("mp4", "mkv")
 pattern = os.path.join(config["path"]["pre"], "*.*")

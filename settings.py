@@ -19,5 +19,15 @@ config = {"path": {
     "sample_rate": 44100,
     "chunk_duration":1800
 # ====================== 设备与精度动态计算 ======================
-}, "device": "cuda" if torch.cuda.is_available() else "cpu"}
-config["compute_type"] = "float16" if config["device"] == "cuda" else "int8"
+},
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+}
+
+# ====================== 设备与精度动态计算 ======================
+# 更适合 GPU 的计算精度探测
+if config["device"] == "cuda":
+    # 针对较新的显卡使用 float16，较老的可能需要 float32
+    # 对于 faster-whisper，float16 是性能与精度的平衡点
+    config["compute_type"] = "float16"
+else:
+    config["compute_type"] = "int8"

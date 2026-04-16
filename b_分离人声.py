@@ -5,11 +5,11 @@ from audio_separator.separator import Separator
 import subprocess
 from settings import config
 
-subprocess.run(
-    [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
-    input="y\n",
-    text=True
-)
+# subprocess.run(
+#     [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
+#     input="y\n",
+#     text=True
+# )
 ffmpeg_downloader.add_path()
 if not os.path.exists(config["path"]["pre"]) or not os.listdir(config["path"]["pre"]):
     print(f"错误：目录不存在或为空")
@@ -18,7 +18,8 @@ separator = Separator(
     model_file_dir=config["path"]["model"],
     output_dir=config["path"]["audio"],  # 分离后的音频存放在 1audio
     output_single_stem="vocals",  # 仅提取人声
-    sample_rate=config["sep"]["sample_rate"],  # 44100
+    sample_rate=16000,  # 识别专用采样率，极大减小文件体积
+    output_format="MP3",  # 采样 MP3 格式进一步优化空间
     use_autocast=True,
     chunk_duration=config["sep"]["chunk_duration"],
     mdxc_params={

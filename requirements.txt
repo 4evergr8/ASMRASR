@@ -1,6 +1,15 @@
-torch
+# 基础依赖
 audio-separator[gpu]
 pysrt
 ffmpeg_downloader
 pyannote.audio
-faster-whisper
+
+# Note: torch and faster-whisper are installed via install_gpu.bat
+# to ensure CUDA compatibility and prevent version overwrites.
+
+# ====== NVIDIA GPU (CUDA) 加速指引 ======
+# 注意：如果你使用的是独显，请运行项目根目录下的 install_gpu.bat
+# 或者手动安装匹配你 CUDA 版本的 torch，例如 CUDA 12.1:
+# pip install torch --index-url https://download.pytorch.org/whl/cu121
+# 以及 GPU 版本的 ONNX Runtime:
+# pip install onnxruntime-gpu

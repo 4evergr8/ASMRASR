@@ -1,10 +1,3 @@
 @echo off
-chcp 65001
-setlocal
-env\python.exe a_提取音频.py
-env\python.exe b_分离人声.py
-env\python.exe c_人声检测.py
-env\python.exe d_语音识别.py
-popd
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0run.ps1"
 pause
-endlocal

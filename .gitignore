@@ -7,3 +7,7 @@
 *.wav
 /model
 /env
+0pre/*
+1audio/*
+2vad/*
+3asr/* 
