@@ -1,6 +1,5 @@
 torch
 audio-separator[gpu]
 pysrt
-ffmpeg_downloader
 pyannote.audio
 faster-whisper
