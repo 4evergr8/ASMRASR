@@ -1,16 +1,8 @@
-import sys
-import ffmpeg_downloader
 import os
 from audio_separator.separator import Separator
-import subprocess
 from settings import config
 
-subprocess.run(
-    [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
-    input="y\n",
-    text=True
-)
-ffmpeg_downloader.add_path()
+
 if not os.path.exists(config["path"]["pre"]) or not os.listdir(config["path"]["pre"]):
     print(f"错误：目录不存在或为空")
     exit(0)
