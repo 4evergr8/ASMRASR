@@ -1,17 +1,8 @@
 import os
 import glob
-import subprocess
-import sys
 from pathlib import Path
-import ffmpeg_downloader
 import torch
 import pysrt
-subprocess.run(
-    [sys.executable, "-m", "ffmpeg_downloader", "install", "8.0@full-shared"],
-    input="y\n",
-    text=True
-)
-ffmpeg_downloader.add_path()
 from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
 from settings import config
